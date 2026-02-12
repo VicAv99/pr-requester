@@ -9,6 +9,7 @@ features/
 └── [feature-name]/
     ├── components/     # Feature-specific components
     ├── hooks/          # Feature-specific hooks
+    ├── queries.ts      # TanStack Query option factories
     ├── types/          # Feature-specific TypeScript types
     └── utils/          # Feature-specific utilities
 ```
@@ -28,11 +29,44 @@ features/projects/
 │   └── project-filters.tsx
 ├── hooks/
 │   └── use-project-filters.ts
+├── queries.ts
 ├── types/
 │   └── project.ts
 └── utils/
     └── project-helpers.ts
 ```
+
+### Query Option Factories
+
+Each feature that fetches data has a `queries.ts` file containing a query factory object. See `AGENTS.md` → "Server State with TanStack Query" for the full pattern.
+
+```tsx
+// features/projects/queries.ts
+import { queryOptions } from "@tanstack/react-query";
+
+export const projectQueries = {
+  all: () => ["projects"],
+  list: (filters: ProjectFilters) =>
+    queryOptions({
+      queryKey: [...projectQueries.all(), "list", filters],
+      queryFn: () => fetchProjects(filters),
+    }),
+  detail: (id: string) =>
+    queryOptions({
+      queryKey: [...projectQueries.all(), "detail", id],
+      queryFn: () => fetchProject(id),
+      staleTime: 5 * 60 * 1000,
+    }),
+};
+```
+
+**Rules:**
+
+- One `queries.ts` per feature (not a directory, a single file)
+- Every entry is a function — even zero-param entries
+- Use `queryOptions()` for entries with a `queryFn`; return plain arrays for key-only entries
+- Components consume factories directly: `useQuery(projectQueries.detail(id))`
+- Do NOT wrap `useQuery` in custom hooks — pass query options directly
 
 ### No Cross-Feature Imports
 

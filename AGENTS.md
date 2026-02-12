@@ -102,11 +102,121 @@ See `components/AGENTS.md` for Lucide icon import and sizing conventions.
 
 ### State Categories
 
-| Type           | Where         | Example                           |
-| -------------- | ------------- | --------------------------------- |
-| **URL State**  | nuqs          | `/projects/123`, `?filter=active` |
-| **Form State** | TanStack Form | Form inputs, validation           |
-| **UI State**   | zustand       | Modals, sidebars, shared toggles  |
+| Type             | Where          | Example                            |
+| ---------------- | -------------- | ---------------------------------- |
+| **Server State** | TanStack Query | API data, GitHub PRs, team members |
+| **URL State**    | nuqs           | `/projects/123`, `?filter=active`  |
+| **Form State**   | TanStack Form  | Form inputs, validation            |
+| **UI State**     | zustand        | Modals, sidebars, shared toggles   |
+
+### Server State with TanStack Query
+
+Use [TanStack Query](https://tanstack.com/query) for all server/async state. Follow [TkDodo's query options API](https://tkdodo.eu/blog/the-query-options-api) pattern.
+
+#### Query Options over Custom Hooks
+
+Do NOT wrap `useQuery` in custom hooks. Instead, define query option factories using `queryOptions()` and pass them directly:
+
+```tsx
+// ❌ Bad: Custom hook wrapper adds no value
+function useReviewRequests() {
+  return useQuery({
+    queryKey: ["reviews", "assigned"],
+    queryFn: fetchAssignedReviews,
+  });
+}
+
+// ✅ Good: Query options factory — reusable across useQuery, prefetch, invalidation
+import { queryOptions } from "@tanstack/react-query";
+
+const assignedReviewsOptions = () =>
+  queryOptions({
+    queryKey: ["reviews", "assigned"],
+    queryFn: fetchAssignedReviews,
+    staleTime: 5 * 60 * 1000,
+  });
+
+// Usage in components
+const query = useQuery(assignedReviewsOptions());
+
+// Usage for prefetching
+queryClient.prefetchQuery(assignedReviewsOptions());
+
+// Usage for invalidation
+queryClient.invalidateQueries({ queryKey: assignedReviewsOptions().queryKey });
+```
+
+#### Always Use Functions
+
+Every query option entry MUST be a function, even if it currently takes no parameters. This keeps the API consistent and makes it easy to add parameters later without changing call sites:
+
+```tsx
+// ❌ Bad: Bare object — breaks if you need to add params later
+const assignedReviewsOptions = queryOptions({
+  queryKey: ["reviews", "assigned"],
+  queryFn: fetchAssignedReviews,
+});
+
+// ✅ Good: Function — consistent, future-proof
+const assignedReviewsOptions = () =>
+  queryOptions({
+    queryKey: ["reviews", "assigned"],
+    queryFn: fetchAssignedReviews,
+  });
+```
+
+#### Query Key Factory Pattern
+
+Organize related queries into a factory object per feature. Every entry is a function — key-only entries return arrays, data-fetching entries return `queryOptions()`:
+
+```tsx
+// features/reviews/queries.ts
+import { queryOptions } from "@tanstack/react-query";
+
+export const reviewQueries = {
+  all: () => ["reviews"],
+  assigned: () =>
+    queryOptions({
+      queryKey: [...reviewQueries.all(), "assigned"],
+      queryFn: fetchAssignedReviews,
+      staleTime: 5 * 60 * 1000,
+    }),
+  teamPRs: (teamSlug: string) =>
+    queryOptions({
+      queryKey: [...reviewQueries.all(), "team-prs", teamSlug],
+      queryFn: () => fetchTeamPRs(teamSlug),
+      staleTime: 5 * 60 * 1000,
+    }),
+  needsTeamReview: (org: string, teamSlug: string) =>
+    queryOptions({
+      queryKey: [...reviewQueries.all(), "needs-team-review", org, teamSlug],
+      queryFn: () => fetchNeedsTeamReview(org, teamSlug),
+      staleTime: 5 * 60 * 1000,
+    }),
+};
+```
+
+```tsx
+// Usage in components — clean, type-safe, composable
+const query = useQuery(reviewQueries.assigned());
+const teamQuery = useQuery(reviewQueries.teamPRs("my-team"));
+
+// Invalidate all review queries at once
+queryClient.invalidateQueries({ queryKey: reviewQueries.all() });
+```
+
+#### Where Query Factories Live
+
+Query factories live in `features/[feature]/queries.ts` — colocated with the feature. See `features/AGENTS.md` for details.
+
+#### TanStack Query Rules
+
+- **Query options over hooks** — use `queryOptions()` factories, not `useXxx` wrappers
+- **Always functions** — every factory entry is a function, even with zero params
+- **One factory per feature** — `features/[feature]/queries.ts`
+- **Hierarchical keys** — enables granular invalidation (`reviewQueries.all()` invalidates everything under `["reviews"]`)
+- **Type-safe keys** — `queryOptions()` tags keys with return types, so `getQueryData(opts.queryKey)` is typed
+- **`staleTime` in the factory** — colocate cache config with the query definition, not at the call site
 
 ### URL State with nuqs
 
@@ -372,13 +482,14 @@ Before using library APIs, verify current syntax to avoid deprecated patterns.
 
 ### Documentation Sources
 
-| Library       | llms.txt                           | Context7 ID            |
-| ------------- | ---------------------------------- | ---------------------- |
-| Zod           | `https://zod.dev/llms.txt`         | `/websites/zod_dev_v4` |
-| Next.js       | `https://nextjs.org/docs/llms.txt` | `/vercel/next.js`      |
-| shadcn/ui     | `https://ui.shadcn.com/llms.txt`   | -                      |
-| nuqs          | `https://nuqs.47ng.com/llms.txt`   | -                      |
-| TanStack Form | -                                  | `/tanstack/form`       |
+| Library        | llms.txt                           | Context7 ID            |
+| -------------- | ---------------------------------- | ---------------------- |
+| Zod            | `https://zod.dev/llms.txt`         | `/websites/zod_dev_v4` |
+| Next.js        | `https://nextjs.org/docs/llms.txt` | `/vercel/next.js`      |
+| shadcn/ui      | `https://ui.shadcn.com/llms.txt`   | -                      |
+| nuqs           | `https://nuqs.47ng.com/llms.txt`   | -                      |
+| TanStack Query | -                                  | `/tanstack/query`      |
+| TanStack Form  | -                                  | `/tanstack/form`       |
 
 ### When to Look Up Docs
 
@@ -399,3 +510,5 @@ Before using library APIs, verify current syntax to avoid deprecated patterns.
 - [Next.js App Router Docs](https://nextjs.org/docs/app)
 - [shadcn/ui Docs](https://ui.shadcn.com)
 - [nuqs Docs](https://nuqs.47ng.com/)
+- [TanStack Query Docs](https://tanstack.com/query)
+- [TkDodo — The Query Options API](https://tkdodo.eu/blog/the-query-options-api)

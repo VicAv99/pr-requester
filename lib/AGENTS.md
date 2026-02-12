@@ -5,10 +5,11 @@ This directory contains configuration, client instances, and external service in
 ## What Belongs Here
 
 - Client instances (auth, database, API clients)
+- TanStack Query client setup (`QueryClient` configuration, provider)
 - Environment configuration (t3-env)
 - Framework adapters and integrations
 - Shared schemas for external libraries (nuqs, zod schemas)
-- Service configuration |
+- Service configuration
 
 ## What Does NOT Belong Here
 
@@ -46,3 +47,24 @@ export const authClient = createAuthClient({ ... })
 // Components import from here
 import { authClient } from '@/lib/auth-client'
 ```
+
+### TanStack Query Client
+
+The `QueryClient` instance and provider live in `lib/`, not in features:
+
+```typescript
+// lib/query-client.ts
+import { QueryClient } from "@tanstack/react-query";
+
+export function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60 * 1000,
+      },
+    },
+  });
+}
+```
+
+Query option factories (the `queryOptions()` objects) do NOT belong here — they live in `features/[feature]/queries.ts`. See `features/AGENTS.md`.
