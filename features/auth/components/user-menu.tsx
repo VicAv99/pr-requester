@@ -14,32 +14,38 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 type UserMenuProps = {
-  userName: string;
-  userImage?: string;
+  user?: {
+    name: string;
+    image?: string | null;
+  };
 };
 
-export function UserMenu({ userName, userImage }: Readonly<UserMenuProps>) {
+export function UserMenu({ user }: Readonly<UserMenuProps>) {
   const router = useRouter();
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        {userImage ? (
+        {user.image ? (
           <Image
-            src={userImage}
-            alt={userName}
+            src={user.image}
+            alt={user.name}
             width={32}
             height={32}
             className="size-8 rounded-full"
           />
         ) : (
           <div className="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-            {userName[0]?.toUpperCase()}
+            {user.name[0]?.toUpperCase()}
           </div>
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>{userName}</DropdownMenuLabel>
+        <DropdownMenuLabel>{user.name}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={async () => {

@@ -14,22 +14,12 @@ export default async function Page() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  const user = session?.user;
 
   return (
     <div className="bg-dot-grid min-h-screen">
       <div className="dashboard-gradient">
         <div className="mx-auto max-w-6xl px-6 py-8">
-          <DashboardHeader
-            userSlot={
-              user && (
-                <UserMenu
-                  userName={user.name}
-                  userImage={user.image ?? undefined}
-                />
-              )
-            }
-          />
+          <DashboardHeader userSlot={<UserMenu user={session?.user} />} />
 
           <div className="mt-8">
             <StatsBar
