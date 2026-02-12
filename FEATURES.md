@@ -12,11 +12,12 @@ A personal dashboard for tracking GitHub pull request review requests, organized
 
 ---
 
-## Feature 1: GitHub Authentication
+## ~~Feature 1: GitHub Authentication~~ ✅
 
 **Goal**: Authenticate the user with GitHub so the app can fetch review requests and team membership data.
 
 **Requirements**:
+
 - Add a login page at `/login` with a "Sign in with GitHub" button
 - Use GitHub OAuth (via NextAuth.js / Auth.js) to authenticate
 - Store the GitHub access token in the session so it can be used for GitHub API calls
@@ -33,6 +34,7 @@ A personal dashboard for tracking GitHub pull request review requests, organized
 **Goal**: Let the user configure which GitHub organization team they belong to, since CODEOWNERS assigns reviews to teams.
 
 **Requirements**:
+
 - After first login, prompt the user to select their org and team via a setup flow or settings page at `/settings`
 - Use the GitHub API to fetch the user's GitHub organizations (`GET /user/orgs`)
 - After an org is selected, fetch the teams in that org (`GET /orgs/{org}/teams`) and let the user pick their team
@@ -48,6 +50,7 @@ A personal dashboard for tracking GitHub pull request review requests, organized
 **Goal**: Show all PRs where the authenticated user is directly requested as a reviewer.
 
 **Requirements**:
+
 - This is the default view on the main `/` page, displayed as a tab or nav item labeled "Assigned to Me"
 - Use the GitHub Search API: `is:pr is:open review-requested:{username}` to fetch PRs where the user is a requested reviewer
 - Display results as a list of cards or table rows. Each PR entry shows:
@@ -69,6 +72,7 @@ A personal dashboard for tracking GitHub pull request review requests, organized
 **Goal**: Show all open PRs authored by members of the user's configured team, so the user can see what their team is working on.
 
 **Requirements**:
+
 - Display as a tab or nav item labeled "My Team's PRs"
 - Using the team members list from Feature 2, fetch open PRs authored by each team member
 - Use the GitHub Search API: `is:pr is:open author:{member}` for each team member, then deduplicate results
@@ -86,6 +90,7 @@ A personal dashboard for tracking GitHub pull request review requests, organized
 **Goal**: Show PRs where the user's team has been requested as a reviewer (typically via CODEOWNERS), so the team can coordinate who picks up what.
 
 **Requirements**:
+
 - Display as a tab or nav item labeled "Needs Team Review"
 - Use the GitHub Search API: `is:pr is:open team-review-requested:{org}/{team_slug}` to fetch PRs where the team is a requested reviewer
 - Display the same PR card/row format as Feature 3, with the addition of:
@@ -102,6 +107,7 @@ A personal dashboard for tracking GitHub pull request review requests, organized
 **Goal**: Let the user filter and search within any of the three views.
 
 **Requirements**:
+
 - Add a filter bar above the PR list that persists across all three views
 - Filters:
   - **Repository**: multi-select combobox to filter by one or more repos
@@ -122,6 +128,7 @@ A personal dashboard for tracking GitHub pull request review requests, organized
 **Goal**: Allow the user to sort the PR list within any view.
 
 **Requirements**:
+
 - Allow sorting by clicking column headers (or a sort dropdown if using card layout)
 - Sortable fields: repository, author, created date, updated date
 - Toggle ascending / descending on each click
@@ -135,6 +142,7 @@ A personal dashboard for tracking GitHub pull request review requests, organized
 **Goal**: Keep data fresh without requiring a page reload.
 
 **Requirements**:
+
 - Add a "Refresh" button in the header that re-fetches data for the current view
 - Show a spinner on the button during refresh
 - Auto-refresh every 5 minutes while the tab is visible
@@ -149,6 +157,7 @@ A personal dashboard for tracking GitHub pull request review requests, organized
 **Goal**: Show at a glance how many PRs are in each view without needing to click into it.
 
 **Requirements**:
+
 - Display a count badge next to each tab/nav item label (e.g. "Assigned to Me (4)")
 - Update counts when data is refreshed
 - Use a muted/subtle style for zero counts
