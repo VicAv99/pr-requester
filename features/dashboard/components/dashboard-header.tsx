@@ -1,14 +1,10 @@
-import { type ReactNode } from "react";
+import { PropsWithChildren } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RefreshCwIcon, SearchIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-type DashboardHeaderProps = {
-  userSlot?: ReactNode;
-};
-
-export function DashboardHeader({ userSlot }: Readonly<DashboardHeaderProps>) {
+export function DashboardHeader({ children }: Readonly<PropsWithChildren>) {
   return (
     <header className="flex items-end justify-between gap-6">
       <div>
@@ -32,7 +28,7 @@ export function DashboardHeader({ userSlot }: Readonly<DashboardHeaderProps>) {
           <RefreshCwIcon className="size-3.5" />
         </Button>
         <ThemeToggle />
-        {userSlot && <div className="ml-1">{userSlot}</div>}
+        {children && <div className="ml-1">{children}</div>}
       </div>
     </header>
   );

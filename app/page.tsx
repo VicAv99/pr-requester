@@ -19,8 +19,9 @@ export default async function Page() {
     <div className="bg-dot-grid min-h-screen">
       <div className="dashboard-gradient">
         <div className="mx-auto max-w-6xl px-6 py-8">
-          <DashboardHeader userSlot={<UserMenu user={session?.user} />} />
-
+          <DashboardHeader>
+            <UserMenu user={session?.user} />
+          </DashboardHeader>
           <div className="mt-8">
             <StatsBar
               assignedCount={ASSIGNED_TO_ME.length}
