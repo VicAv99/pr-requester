@@ -1,0 +1,108 @@
+import { cn } from "@/lib/utils";
+import type { PullRequest, ReviewStatus } from "../types/dashboard";
+import { UserAvatar } from "./user-avatar";
+import { ReviewStatusBadge } from "./review-status-badge";
+import { getRelativeTime } from "../utils/relative-time";
+import { ExternalLinkIcon, GitPullRequestDraftIcon } from "lucide-react";
+
+const STATUS_BORDER: Record<ReviewStatus, string> = {
+  approved: "border-l-status-approved",
+  changes_requested: "border-l-status-changes-requested",
+  pending: "border-l-status-pending",
+  commented: "border-l-status-commented",
+};
+
+type PRCardProps = {
+  pr: PullRequest;
+};
+
+export function PRCard({ pr }: PRCardProps) {
+  return (
+    <a
+      href={pr.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(
+        "group block rounded-xl border border-border/50 bg-card p-4 transition-all duration-200",
+        "hover:-translate-y-0.5 hover:border-border hover:shadow-lg hover:shadow-black/20",
+        "border-l-[3px]",
+        pr.isDraft ? "border-l-status-draft" : STATUS_BORDER[pr.reviewStatus]
+      )}
+    >
+      {/* Title row */}
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="text-sm font-medium leading-snug text-card-foreground transition-colors group-hover:text-primary">
+          {pr.title}
+        </h3>
+        <ExternalLinkIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+      </div>
+
+      {/* Meta row */}
+      <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
+        <span className="font-mono">{pr.repo}</span>
+        <span className="text-border">·</span>
+        <span className="font-mono">#{pr.number}</span>
+        <span className="text-border">·</span>
+        <span>{getRelativeTime(pr.createdAt)}</span>
+        {pr.isDraft && (
+          <>
+            <span className="text-border">·</span>
+            <span className="inline-flex items-center gap-1 text-status-draft">
+              <GitPullRequestDraftIcon className="size-3" />
+              Draft
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* Labels + Status */}
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          {pr.labels.map((label) => (
+            <span
+              key={label.name}
+              className="rounded-full border px-2 py-0.5 text-[10px] font-medium"
+              style={{
+                backgroundColor: `${label.color}15`,
+                color: label.color,
+                borderColor: `${label.color}30`,
+              }}
+            >
+              {label.name}
+            </span>
+          ))}
+        </div>
+        <ReviewStatusBadge status={pr.reviewStatus} />
+      </div>
+
+      {/* Bottom row: Author + Diff + Reviewers */}
+      <div className="mt-3 flex items-center justify-between border-t border-border/30 pt-3">
+        <div className="flex items-center gap-2">
+          <UserAvatar username={pr.author} className="size-5" />
+          <span className="text-xs text-muted-foreground">{pr.author}</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[11px]">
+            <span className="text-status-approved">+{pr.additions}</span>{" "}
+            <span className="text-status-changes-requested">
+              -{pr.deletions}
+            </span>
+          </span>
+
+          {pr.reviewers.length > 0 && (
+            <div className="flex -space-x-1.5">
+              {pr.reviewers.map((reviewer) => (
+                <UserAvatar
+                  key={reviewer.username}
+                  username={reviewer.username}
+                  className="size-5 ring-2 ring-card"
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </a>
+  );
+}
