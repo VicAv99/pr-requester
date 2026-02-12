@@ -29,7 +29,7 @@ A personal dashboard for tracking GitHub pull request review requests, organized
 
 ---
 
-## Feature 2: Team Configuration
+## ~~Feature 2: Team Configuration~~ ✅
 
 **Goal**: Let the user configure which GitHub organization team they belong to, since CODEOWNERS assigns reviews to teams.
 
@@ -45,7 +45,7 @@ A personal dashboard for tracking GitHub pull request review requests, organized
 
 ---
 
-## Feature 3: "Assigned to Me" View
+## ~~Feature 3: "Assigned to Me" View~~ ✅
 
 **Goal**: Show all PRs where the authenticated user is directly requested as a reviewer.
 
