@@ -30,11 +30,17 @@ const EMPTY_MESSAGES: Record<DashboardTab, string> = {
   "needs-review": "No PRs need your team's review",
 };
 
-type TeamPrsFilter = "all" | "ready";
+const READY_EMPTY_MESSAGES: Record<DashboardTab, string> = {
+  assigned: "No assigned PRs are ready to merge",
+  "team-prs": "No team PRs are ready to merge",
+  "needs-review": "No PRs needing review are ready to merge",
+};
+
+type PrFilter = "all" | "ready";
 
 export function PRTabList() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("assigned");
-  const [teamPrsFilter, setTeamPrsFilter] = useState<TeamPrsFilter>("all");
+  const [prFilter, setPrFilter] = useState<PrFilter>("all");
   const selectedMembers = useSelectedMembers();
 
   const assignedQuery = useQuery(dashboardQueries.assigned());
@@ -51,14 +57,21 @@ export function PRTabList() {
     }
   }
 
+  function applyFilter(prs: PullRequest[]): PullRequest[] {
+    if (prFilter === "ready") return prs.filter(isReadyToMerge);
+    return prs;
+  }
+
   function getTabCount(tabId: DashboardTab): number | undefined {
     switch (tabId) {
       case "assigned":
-        return assignedQuery.isLoading ? undefined : assignedQuery.data?.length;
+        if (assignedQuery.isLoading) return undefined;
+        return applyFilter(assignedQuery.data ?? []).length;
       case "team-prs":
-        return teamPrsQuery.isLoading ? undefined : teamPrsQuery.data?.length;
+        if (teamPrsQuery.isLoading) return undefined;
+        return applyFilter(teamPrsQuery.data ?? []).length;
       default:
-        return getTabData(tabId).length;
+        return applyFilter(getTabData(tabId)).length;
     }
   }
 
@@ -66,13 +79,7 @@ export function PRTabList() {
     (activeTab === "assigned" && assignedQuery.isLoading) ||
     (activeTab === "team-prs" && teamPrsQuery.isLoading);
 
-  const currentData = (() => {
-    const data = getTabData(activeTab);
-    if (activeTab === "team-prs" && teamPrsFilter === "ready") {
-      return data.filter(isReadyToMerge);
-    }
-    return data;
-  })();
+  const currentData = applyFilter(getTabData(activeTab));
 
   const lastUpdatedAt = (() => {
     if (activeTab === "assigned" && assignedQuery.dataUpdatedAt) {
@@ -125,33 +132,33 @@ export function PRTabList() {
           );
         })}
 
-        <div className="ml-auto text-xs text-muted-foreground">
-          Last updated:{" "}
-          <span className="font-mono">{lastUpdatedAt}</span>
+        <div className="ml-auto flex items-center gap-3">
+          <div className="flex items-center gap-1 rounded-lg border border-border/50 p-0.5">
+            <Button
+              variant={prFilter === "all" ? "secondary" : "ghost"}
+              size="xs"
+              onClick={() => setPrFilter("all")}
+            >
+              All
+            </Button>
+            <Button
+              variant={prFilter === "ready" ? "secondary" : "ghost"}
+              size="xs"
+              onClick={() => setPrFilter("ready")}
+            >
+              Ready to merge
+            </Button>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            Last updated:{" "}
+            <span className="font-mono">{lastUpdatedAt}</span>
+          </span>
         </div>
       </div>
 
       {activeTab === "team-prs" && (
-        <div className="mt-4 space-y-3">
+        <div className="mt-4">
           <MemberPicker />
-          {selectedMembers.length > 0 && (
-            <div className="flex items-center gap-1 rounded-lg border border-border/50 p-1 w-fit">
-              <Button
-                variant={teamPrsFilter === "all" ? "secondary" : "ghost"}
-                size="xs"
-                onClick={() => setTeamPrsFilter("all")}
-              >
-                All
-              </Button>
-              <Button
-                variant={teamPrsFilter === "ready" ? "secondary" : "ghost"}
-                size="xs"
-                onClick={() => setTeamPrsFilter("ready")}
-              >
-                Ready to merge
-              </Button>
-            </div>
-          )}
         </div>
       )}
 
@@ -169,7 +176,13 @@ export function PRTabList() {
             </div>
           ))
         ) : currentData.length === 0 ? (
-          <PREmptyState message={EMPTY_MESSAGES[activeTab]} />
+          <PREmptyState
+            message={
+              prFilter === "ready"
+                ? READY_EMPTY_MESSAGES[activeTab]
+                : EMPTY_MESSAGES[activeTab]
+            }
+          />
         ) : (
           currentData.map((pr, i) => (
             <div
