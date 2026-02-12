@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RefreshCwIcon, SearchIcon } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { UserAvatar } from "./user-avatar";
 
 export function DashboardHeader() {
@@ -26,6 +27,7 @@ export function DashboardHeader() {
         <Button variant="outline" size="icon-sm" title="Refresh">
           <RefreshCwIcon className="size-3.5" />
         </Button>
+        <ThemeToggle />
         <div className="ml-1">
           <UserAvatar username="vavilamo" className="size-8 text-sm" />
         </div>

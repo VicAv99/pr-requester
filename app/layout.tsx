@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Inter, Newsreader } from "next/font/google";
 import "./globals.css";
 import { PropsWithChildren } from "react";
 import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -29,16 +30,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<PropsWithChildren>) {
   return (
-    <html lang="en" className={cn(inter.variable, "dark")}>
+    <html lang="en" suppressHydrationWarning className={inter.variable}>
       <body
+        suppressHydrationWarning
         className={cn(
           geistSans.variable,
           geistMono.variable,
           newsreader.variable,
-          "antialiased"
+          "antialiased",
         )}
       >
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );
