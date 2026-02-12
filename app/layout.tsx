@@ -4,6 +4,7 @@ import "./globals.css";
 import { PropsWithChildren } from "react";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
+import { QueryProvider } from "@/lib/query-provider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -40,7 +41,9 @@ export default function RootLayout({ children }: Readonly<PropsWithChildren>) {
           "antialiased",
         )}
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <QueryProvider>{children}</QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

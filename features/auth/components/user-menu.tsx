@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { LogOutIcon } from "lucide-react";
+import { LogOutIcon, SettingsIcon } from "lucide-react";
+import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import {
   DropdownMenu,
@@ -47,6 +48,12 @@ export function UserMenu({ user }: Readonly<UserMenuProps>) {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>{user.name}</DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/settings">
+            <SettingsIcon className="size-3.5" />
+            Settings
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={async () => {
             await authClient.signOut();

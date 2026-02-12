@@ -4,6 +4,7 @@ import { DashboardHeader } from "@/features/dashboard/components/dashboard-heade
 import { UserMenu } from "@/features/auth/components/user-menu";
 import { StatsBar } from "@/features/dashboard/components/stats-bar";
 import { PRTabList } from "@/features/dashboard/components/pr-tab-list";
+import { TeamConfigBanner } from "@/features/team-config/components/team-config-banner";
 import {
   ASSIGNED_TO_ME,
   TEAM_PRS,
@@ -22,6 +23,9 @@ export default async function Page() {
           <DashboardHeader>
             <UserMenu user={session?.user} />
           </DashboardHeader>
+          <div className="mt-6">
+            <TeamConfigBanner />
+          </div>
           <div className="mt-8">
             <StatsBar
               assignedCount={ASSIGNED_TO_ME.length}
