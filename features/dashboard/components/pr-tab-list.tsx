@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useQueryState, parseAsStringLiteral } from "nuqs";
+import { useQueryState, parseAsString, parseAsStringLiteral } from "nuqs";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,10 +9,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { XIcon } from "lucide-react";
 import { PRCard } from "./pr-card";
 import { PRCardSkeleton } from "./pr-card-skeleton";
 import { PREmptyState } from "./pr-empty-state";
 import { MemberPicker } from "./member-picker";
+import { UserAvatar } from "./user-avatar";
 import { dashboardQueries } from "../queries";
 import { useSelectedMembers } from "../hooks/use-selected-members";
 import type { DashboardTab, PullRequest } from "../types/dashboard";
@@ -56,6 +58,10 @@ export function PRTabList() {
     "filter",
     parseAsStringLiteral(["all", "open"] as const).withDefault("all"),
   );
+  const [authorFilter, setAuthorFilter] = useQueryState(
+    "author",
+    parseAsString.withDefault(""),
+  );
   const selectedMembers = useSelectedMembers();
 
   const assignedQuery = useQuery(dashboardQueries.assigned());
@@ -71,8 +77,10 @@ export function PRTabList() {
   }
 
   function applyFilter(prs: PullRequest[]): PullRequest[] {
-    if (prFilter === "open") return prs.filter(isOpenForReview);
-    return prs;
+    let filtered = prs;
+    if (prFilter === "open") filtered = filtered.filter(isOpenForReview);
+    if (authorFilter) filtered = filtered.filter((pr) => pr.author === authorFilter);
+    return filtered;
   }
 
   function getTabCount(tabId: DashboardTab): number | undefined {
@@ -186,6 +194,21 @@ export function PRTabList() {
         </div>
       )}
 
+      {authorFilter && (
+        <div className="mt-4 flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Filtered by</span>
+          <button
+            type="button"
+            onClick={() => setAuthorFilter("")}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 py-0.5 pl-1 pr-2 text-xs font-medium transition-colors hover:bg-muted"
+          >
+            <UserAvatar username={authorFilter} className="size-4" />
+            {authorFilter}
+            <XIcon className="size-3 text-muted-foreground" />
+          </button>
+        </div>
+      )}
+
       <div key={activeTab} className="mt-6 space-y-3 pb-12">
         {showEmptyPrompt ? (
           <PREmptyState message="Select team members above to see their open PRs" />
@@ -214,7 +237,7 @@ export function PRTabList() {
               className="animate-fade-in-up"
               style={{ animationDelay: `${i * 60}ms` }}
             >
-              <PRCard pr={pr} />
+              <PRCard pr={pr} onAuthorClick={setAuthorFilter} />
             </div>
           ))
         )}

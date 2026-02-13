@@ -23,9 +23,10 @@ const STATUS_BORDER: Record<ReviewStatus, string> = {
 
 type PRCardProps = {
   pr: PullRequest;
+  onAuthorClick?: (username: string) => void;
 };
 
-export function PRCard({ pr }: PRCardProps) {
+export function PRCard({ pr, onAuthorClick }: PRCardProps) {
   return (
     <a
       href={pr.url}
@@ -118,10 +119,18 @@ export function PRCard({ pr }: PRCardProps) {
 
       {/* Bottom row: Author + Diff + Reviewers */}
       <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-3">
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="flex items-center gap-2 rounded-md px-1.5 py-0.5 -ml-1.5 transition-colors hover:bg-muted"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onAuthorClick?.(pr.author);
+          }}
+        >
           <UserAvatar username={pr.author} className="size-5" />
           <span className="text-xs text-muted-foreground">{pr.author}</span>
-        </div>
+        </button>
 
         <div className="flex items-center gap-3">
           <span className="font-mono text-[11px]">
