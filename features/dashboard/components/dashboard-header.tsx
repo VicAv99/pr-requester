@@ -1,8 +1,6 @@
 import { PropsWithChildren } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { RefreshCwIcon, SearchIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { RefreshButton } from "@/features/dashboard/components/refresh-button";
 
 export function DashboardHeader({ children }: Readonly<PropsWithChildren>) {
   return (
@@ -17,16 +15,7 @@ export function DashboardHeader({ children }: Readonly<PropsWithChildren>) {
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="relative">
-          <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search pull requests..."
-            className="h-8 w-64 pl-8 text-xs"
-          />
-        </div>
-        <Button variant="outline" size="icon-sm" title="Refresh">
-          <RefreshCwIcon className="size-3.5" />
-        </Button>
+        <RefreshButton />
         <ThemeToggle />
         {children && <div className="ml-1">{children}</div>}
       </div>
