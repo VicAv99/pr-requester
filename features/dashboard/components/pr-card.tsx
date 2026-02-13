@@ -3,7 +3,11 @@ import type { PullRequest, ReviewStatus } from "../types/dashboard";
 import { UserAvatar } from "./user-avatar";
 import { ReviewStatusBadge } from "./review-status-badge";
 import { getRelativeTime } from "../utils/relative-time";
-import { ExternalLinkIcon, GitPullRequestDraftIcon } from "lucide-react";
+import {
+  ExternalLinkIcon,
+  GitPullRequestDraftIcon,
+  UsersIcon,
+} from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -62,7 +66,7 @@ export function PRCard({ pr }: PRCardProps) {
 
       {/* Labels + Status */}
       <div className="mt-3 flex items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {pr.labels.map((label) => (
             <span
               key={label.name}
@@ -77,7 +81,24 @@ export function PRCard({ pr }: PRCardProps) {
             </span>
           ))}
         </div>
-        <ReviewStatusBadge status={pr.reviewStatus} />
+        <div className="flex items-center gap-2">
+          {pr.requestedTeams.length > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <UsersIcon className="size-3" />
+                  <span className="tabular-nums">
+                    {pr.requestedTeams.length}
+                  </span>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                Waiting on {pr.requestedTeams.join(", ")}
+              </TooltipContent>
+            </Tooltip>
+          )}
+          <ReviewStatusBadge status={pr.reviewStatus} />
+        </div>
       </div>
 
       {/* Bottom row: Author + Diff + Reviewers */}

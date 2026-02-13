@@ -83,6 +83,7 @@ export function transformGitHubPR(
     labels: item.labels.map((l) => ({ name: l.name, color: `#${l.color}` })),
     reviewStatus: computeOverallStatus(reviewers),
     reviewers,
+    requestedTeams: detail?.requested_teams?.map((t) => t.name) ?? [],
     additions: detail?.additions ?? 0,
     deletions: detail?.deletions ?? 0,
     url: item.pull_request.html_url,
