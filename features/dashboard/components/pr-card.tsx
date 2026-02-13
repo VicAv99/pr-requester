@@ -35,7 +35,7 @@ export function PRCard({ pr }: PRCardProps) {
         "group block rounded-xl border border-border bg-card p-4 transition-all duration-200",
         "hover:-translate-y-0.5 hover:border-border hover:shadow-lg hover:shadow-black/20",
         "border-l-[3px]",
-        pr.isDraft ? "border-l-status-draft" : STATUS_BORDER[pr.reviewStatus]
+        pr.isDraft ? "border-l-status-draft" : STATUS_BORDER[pr.reviewStatus],
       )}
     >
       {/* Title row */}
@@ -92,8 +92,23 @@ export function PRCard({ pr }: PRCardProps) {
                   </span>
                 </span>
               </TooltipTrigger>
-              <TooltipContent side="top">
-                Waiting on {pr.requestedTeams.join(", ")}
+              <TooltipContent side="top" className="flex flex-col gap-1">
+                <span className="text-xs font-medium">
+                  Waiting on {pr.requestedTeams.length}{" "}
+                  {pr.requestedTeams.length === 1 ? "team" : "teams"}
+                </span>
+                {pr.requestedTeams.map((team) => (
+                  <a
+                    key={team.slug}
+                    href={`https://github.com/orgs/${pr.repo.split("/")[0]}/teams/${team.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-background/70 hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {team.name}
+                  </a>
+                ))}
               </TooltipContent>
             </Tooltip>
           )}

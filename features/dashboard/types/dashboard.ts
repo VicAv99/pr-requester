@@ -26,7 +26,7 @@ export type PullRequest = {
   labels: PRLabel[];
   reviewStatus: ReviewStatus;
   reviewers: PRReviewer[];
-  requestedTeams: string[];
+  requestedTeams: { name: string; slug: string }[];
   additions: number;
   deletions: number;
   url: string;
