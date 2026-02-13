@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGitHubToken } from "@/lib/github";
+import { tryCatch } from "@/utils/try-catch";
 
 export async function GET(request: NextRequest) {
   const org = request.nextUrl.searchParams.get("org");
@@ -12,11 +13,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  let token: string;
-  try {
-    token = await getGitHubToken();
-  } catch (error) {
-    console.error("Failed to get GitHub token:", error);
+  const { data: token, error: tokenError } = await tryCatch(getGitHubToken());
+  if (tokenError) {
+    console.error("Failed to get GitHub token:", tokenError);
     return NextResponse.json(
       { error: "Failed to authenticate with GitHub" },
       { status: 401 },

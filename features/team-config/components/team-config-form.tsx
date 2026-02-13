@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { CheckIcon, KeyIcon, Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { tryCatch } from "@/utils/try-catch";
 import {
   Card,
   CardHeader,
@@ -64,40 +65,44 @@ export function TeamConfigForm() {
     setPatSaving(true);
     setPatError(null);
 
-    try {
-      // Save the PAT as an httpOnly cookie
-      const res = await fetch("/api/github/token", {
+    // Save the PAT as an httpOnly cookie
+    const { data: res, error: saveError } = await tryCatch(
+      fetch("/api/github/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: pat.trim() }),
-      });
+      }),
+    );
 
-      if (!res.ok) {
-        setPatError("Failed to save token");
-        return;
-      }
-
-      // Verify the token works by fetching orgs
-      const orgsRes = await fetch("/api/github/orgs");
-      if (!orgsRes.ok) {
-        setPatError(
-          "Token saved but could not access GitHub. Check the token has read:org scope.",
-        );
-        // Clear the invalid token
-        await fetch("/api/github/token", { method: "DELETE" });
-        return;
-      }
-
-      setPatSaved(true);
-      setPat("");
-
-      // Invalidate cached queries so they refetch with the new token
-      queryClient.invalidateQueries({
-        queryKey: teamConfigQueries.all(),
-      });
-    } finally {
+    if (saveError || !res.ok) {
+      setPatError("Failed to save token");
       setPatSaving(false);
+      return;
     }
+
+    // Verify the token works by fetching orgs
+    const { data: orgsRes, error: orgsError } = await tryCatch(
+      fetch("/api/github/orgs"),
+    );
+
+    if (orgsError || !orgsRes.ok) {
+      setPatError(
+        "Token saved but could not access GitHub. Check the token has read:org scope.",
+      );
+      // Clear the invalid token
+      await fetch("/api/github/token", { method: "DELETE" });
+      setPatSaving(false);
+      return;
+    }
+
+    setPatSaved(true);
+    setPat("");
+
+    // Invalidate cached queries so they refetch with the new token
+    queryClient.invalidateQueries({
+      queryKey: teamConfigQueries.all(),
+    });
+    setPatSaving(false);
   }, [pat, queryClient]);
 
   const handleOrgChange = useCallback((org: GitHubOrg | null) => {

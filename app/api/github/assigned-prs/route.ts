@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGitHubToken } from "@/lib/github";
+import { tryCatch } from "@/utils/try-catch";
 import { transformGitHubPR } from "@/features/dashboard/utils/transform-github-pr";
 import type {
   GitHubSearchResult,
@@ -27,67 +28,75 @@ async function githubFetch<T>(path: string, token: string): Promise<T> {
 }
 
 export async function GET() {
-  let token: string;
-  try {
-    token = await getGitHubToken();
-  } catch (error) {
-    console.error("Failed to get GitHub token:", error);
+  const { data: token, error: tokenError } = await tryCatch(getGitHubToken());
+  if (tokenError) {
+    console.error("Failed to get GitHub token:", tokenError);
     return NextResponse.json(
       { error: "Failed to authenticate with GitHub" },
       { status: 401 },
     );
   }
 
-  try {
-    // 1. Fetch the authenticated user's login
-    const user = await githubFetch<{ login: string }>("/user", token);
-
-    // 2. Search for open PRs where the user is a requested reviewer
-    const query = `is:pr is:open review-requested:${user.login}`;
-    const searchResult = await githubFetch<GitHubSearchResult>(
-      `/search/issues?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=100`,
-      token,
-    );
-
-    // 3. Enrich each PR with detail + reviews in parallel
-    const enrichedPRs = await Promise.allSettled(
-      searchResult.items.map(async (item) => {
-        const ownerRepo = item.repository_url.split("/repos/")[1];
-
-        const [detailResult, reviewsResult] = await Promise.allSettled([
-          githubFetch<GitHubPRDetail>(
-            `/repos/${ownerRepo}/pulls/${item.number}`,
-            token,
-          ),
-          githubFetch<GitHubReview[]>(
-            `/repos/${ownerRepo}/pulls/${item.number}/reviews`,
-            token,
-          ),
-        ]);
-
-        const detail =
-          detailResult.status === "fulfilled" ? detailResult.value : null;
-        const reviews =
-          reviewsResult.status === "fulfilled" ? reviewsResult.value : [];
-
-        return transformGitHubPR(item, detail, reviews);
-      }),
-    );
-
-    // 4. Collect successful results, drop failures
-    const prs = enrichedPRs
-      .filter(
-        (r): r is PromiseFulfilledResult<ReturnType<typeof transformGitHubPR>> =>
-          r.status === "fulfilled",
-      )
-      .map((r) => r.value);
-
-    return NextResponse.json(prs);
-  } catch (error) {
-    console.error("Failed to fetch assigned PRs:", error);
+  // 1. Fetch the authenticated user's login
+  const { data: user, error: userError } = await tryCatch(
+    githubFetch<{ login: string }>("/user", token),
+  );
+  if (userError) {
+    console.error("Failed to fetch assigned PRs:", userError);
     return NextResponse.json(
       { error: "Failed to fetch assigned pull requests" },
       { status: 502 },
     );
   }
+
+  // 2. Search for open PRs where the user is a requested reviewer
+  const query = `is:pr is:open review-requested:${user.login}`;
+  const { data: searchResult, error: searchError } = await tryCatch(
+    githubFetch<GitHubSearchResult>(
+      `/search/issues?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=100`,
+      token,
+    ),
+  );
+  if (searchError) {
+    console.error("Failed to fetch assigned PRs:", searchError);
+    return NextResponse.json(
+      { error: "Failed to fetch assigned pull requests" },
+      { status: 502 },
+    );
+  }
+
+  // 3. Enrich each PR with detail + reviews in parallel
+  const enrichedPRs = await Promise.allSettled(
+    searchResult.items.map(async (item) => {
+      const ownerRepo = item.repository_url.split("/repos/")[1];
+
+      const [detailResult, reviewsResult] = await Promise.allSettled([
+        githubFetch<GitHubPRDetail>(
+          `/repos/${ownerRepo}/pulls/${item.number}`,
+          token,
+        ),
+        githubFetch<GitHubReview[]>(
+          `/repos/${ownerRepo}/pulls/${item.number}/reviews`,
+          token,
+        ),
+      ]);
+
+      const detail =
+        detailResult.status === "fulfilled" ? detailResult.value : null;
+      const reviews =
+        reviewsResult.status === "fulfilled" ? reviewsResult.value : [];
+
+      return transformGitHubPR(item, detail, reviews);
+    }),
+  );
+
+  // 4. Collect successful results, drop failures
+  const prs = enrichedPRs
+    .filter(
+      (r): r is PromiseFulfilledResult<ReturnType<typeof transformGitHubPR>> =>
+        r.status === "fulfilled",
+    )
+    .map((r) => r.value);
+
+  return NextResponse.json(prs);
 }

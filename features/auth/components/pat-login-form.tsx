@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { KeyRoundIcon, Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { tryCatch } from "@/utils/try-catch";
 import {
   Field,
   FieldLabel,
@@ -30,26 +31,30 @@ export function PATLoginForm() {
 
     setIsSubmitting(true);
 
-    try {
-      const res = await fetch("/api/github/token", {
+    const { data: res, error: fetchError } = await tryCatch(
+      fetch("/api/github/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: trimmed }),
-      });
+      }),
+    );
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Failed to validate token");
-        return;
-      }
-
-      router.push("/");
-    } catch {
+    if (fetchError) {
       setError("Network error. Please try again.");
-    } finally {
       setIsSubmitting(false);
+      return;
     }
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error || "Failed to validate token");
+      setIsSubmitting(false);
+      return;
+    }
+
+    setIsSubmitting(false);
+    router.push("/");
   }
 
   return (
