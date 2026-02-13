@@ -33,6 +33,7 @@ export type GitHubPRDetail = {
   number: number;
   additions: number;
   deletions: number;
+  changed_files: number;
   requested_reviewers: {
     login: string;
     avatar_url: string;

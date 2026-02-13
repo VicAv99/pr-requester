@@ -29,6 +29,7 @@ export type PullRequest = {
   requestedTeams: { name: string; slug: string }[];
   additions: number;
   deletions: number;
+  changedFiles: number;
   url: string;
 };
 

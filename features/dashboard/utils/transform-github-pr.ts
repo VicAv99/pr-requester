@@ -88,6 +88,7 @@ export function transformGitHubPR(
       [],
     additions: detail?.additions ?? 0,
     deletions: detail?.deletions ?? 0,
+    changedFiles: detail?.changed_files ?? 0,
     url: item.pull_request.html_url,
   };
 }

@@ -8,6 +8,7 @@ import {
   CheckIcon,
   ClipboardCopyIcon,
   ExternalLinkIcon,
+  FileIcon,
   GitPullRequestDraftIcon,
   UsersIcon,
 } from "lucide-react";
@@ -170,6 +171,10 @@ export function PRCard({ pr, onAuthorClick }: PRCardProps) {
         </button>
 
         <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+            <FileIcon className="size-3" />
+            <span className="tabular-nums">{pr.changedFiles}</span>
+          </span>
           <span className="font-mono text-[11px]">
             <span className="text-status-approved">+{pr.additions}</span>{" "}
             <span className="text-status-changes-requested">
