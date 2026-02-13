@@ -3,10 +3,7 @@ import { Geist, Geist_Mono, Inter, Newsreader } from "next/font/google";
 import "./globals.css";
 import { PropsWithChildren } from "react";
 import { cn } from "@/lib/utils";
-import { ThemeProvider } from "@/components/theme-provider";
-import { QueryProvider } from "@/lib/query-provider";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { NuqsAdapter } from "nuqs/adapters/next/app";
+import { Providers } from "@/components/providers";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -43,13 +40,7 @@ export default function RootLayout({ children }: Readonly<PropsWithChildren>) {
           "antialiased",
         )}
       >
-        <NuqsAdapter>
-          <ThemeProvider>
-            <QueryProvider>
-              <TooltipProvider>{children}</TooltipProvider>
-            </QueryProvider>
-          </ThemeProvider>
-        </NuqsAdapter>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
