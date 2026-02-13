@@ -17,6 +17,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { HighlightMatch } from "@/components/highlight-match";
 import { useTeamConfig } from "@/hooks/use-team-config";
 import { useSelectedMembers } from "../hooks/use-selected-members";
 import { setSelectedMembers } from "../utils/selected-members-storage";
@@ -43,6 +44,7 @@ export function MemberPicker() {
   const selectedLogins = useSelectedMembers();
   const allMembers = getUniqueMembers(teamConfig);
   const [expanded, setExpanded] = useState(false);
+  const [query, setQuery] = useState("");
 
   if (allMembers.length === 0) {
     return (
@@ -71,7 +73,11 @@ export function MemberPicker() {
       multiple
       value={selectedLogins}
       onValueChange={(newValues) => setSelectedMembers(newValues)}
+      onInputValueChange={(v) => setQuery(v)}
       items={allLogins}
+      filter={(value, query) =>
+        value.toLowerCase().includes(query.toLowerCase())
+      }
     >
       <ComboboxChips ref={chipsRef}>
         {visibleLogins.map((login) => {
@@ -143,7 +149,7 @@ export function MemberPicker() {
                     className="size-5 rounded-full"
                   />
                 )}
-                {login}
+                <HighlightMatch text={login} query={query} />
               </ComboboxItem>
             );
           }}

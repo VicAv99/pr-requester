@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2Icon, UsersIcon } from "lucide-react";
 import {
@@ -14,6 +15,7 @@ import {
   useComboboxAnchor,
 } from "@/components/ui/combobox";
 import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
+import { HighlightMatch } from "@/components/highlight-match";
 import { teamConfigQueries } from "@/features/team-config/queries";
 
 type TeamSelectProps = {
@@ -28,6 +30,7 @@ export function TeamSelect({
   onValueChange,
 }: Readonly<TeamSelectProps>) {
   const chipsRef = useComboboxAnchor();
+  const [query, setQuery] = useState("");
   const { data: teams, isLoading, error } = useQuery(
     teamConfigQueries.teams(org ?? ""),
   );
@@ -60,7 +63,14 @@ export function TeamSelect({
           multiple
           value={value}
           onValueChange={(newValues) => onValueChange(newValues)}
+          onInputValueChange={(v) => setQuery(v)}
           items={teamSlugs}
+          filter={(value, query) => {
+            const q = query.toLowerCase();
+            if (value.toLowerCase().includes(q)) return true;
+            const team = teamMap.get(value);
+            return team?.name.toLowerCase().includes(q) ?? false;
+          }}
         >
           <ComboboxChips ref={chipsRef}>
             {value.map((slug) => {
@@ -81,9 +91,9 @@ export function TeamSelect({
                   <ComboboxItem key={slug} value={slug}>
                     <UsersIcon className="size-4 text-muted-foreground" />
                     <span>
-                      {team?.name ?? slug}
+                      <HighlightMatch text={team?.name ?? slug} query={query} />
                       <span className="ml-2 text-muted-foreground">
-                        {team?.slug ?? slug}
+                        <HighlightMatch text={team?.slug ?? slug} query={query} />
                       </span>
                     </span>
                   </ComboboxItem>
