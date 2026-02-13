@@ -17,7 +17,7 @@ function StatCard({ label, value, icon: Icon, accentColor, delay }: StatCardProp
   return (
     <div
       className={cn(
-        "animate-count-up rounded-xl border border-border/50 bg-card p-5"
+        "animate-count-up rounded-xl border border-border bg-card p-5"
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
@@ -30,7 +30,7 @@ function StatCard({ label, value, icon: Icon, accentColor, delay }: StatCardProp
         </p>
         <Icon
           className="size-5"
-          style={{ color: accentColor, opacity: 0.4 }}
+          style={{ color: accentColor, opacity: 0.6 }}
         />
       </div>
       <p className="mt-1.5 text-[11px] uppercase tracking-[0.15em] text-muted-foreground">

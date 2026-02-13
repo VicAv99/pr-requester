@@ -23,7 +23,7 @@ export function PRCard({ pr }: PRCardProps) {
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "group block rounded-xl border border-border/50 bg-card p-4 transition-all duration-200",
+        "group block rounded-xl border border-border bg-card p-4 transition-all duration-200",
         "hover:-translate-y-0.5 hover:border-border hover:shadow-lg hover:shadow-black/20",
         "border-l-[3px]",
         pr.isDraft ? "border-l-status-draft" : STATUS_BORDER[pr.reviewStatus]
@@ -76,7 +76,7 @@ export function PRCard({ pr }: PRCardProps) {
       </div>
 
       {/* Bottom row: Author + Diff + Reviewers */}
-      <div className="mt-3 flex items-center justify-between border-t border-border/30 pt-3">
+      <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-3">
         <div className="flex items-center gap-2">
           <UserAvatar username={pr.author} className="size-5" />
           <span className="text-xs text-muted-foreground">{pr.author}</span>

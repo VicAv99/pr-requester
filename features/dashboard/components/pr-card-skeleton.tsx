@@ -1,6 +1,6 @@
 export function PRCardSkeleton() {
   return (
-    <div className="animate-pulse rounded-xl border border-border/50 bg-card p-4">
+    <div className="animate-pulse rounded-xl border border-border bg-card p-4">
       {/* Title row */}
       <div className="flex items-start justify-between gap-3">
         <div className="h-4 w-3/4 rounded bg-muted" />
@@ -23,7 +23,7 @@ export function PRCardSkeleton() {
       </div>
 
       {/* Bottom row */}
-      <div className="mt-3.5 flex items-center justify-between border-t border-border/30 pt-3">
+      <div className="mt-3.5 flex items-center justify-between border-t border-border/50 pt-3">
         <div className="flex items-center gap-2">
           <div className="size-5 rounded-full bg-muted" />
           <div className="h-3 w-20 rounded bg-muted" />

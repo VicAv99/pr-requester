@@ -43,8 +43,8 @@ const EMPTY_MESSAGES: Record<DashboardTab, string> = {
 };
 
 const READY_EMPTY_MESSAGES: Record<DashboardTab, string> = {
-  assigned: "No assigned PRs are ready to merge",
-  "team-prs": "No team PRs are ready to merge",
+  assigned: "No open assigned PRs",
+  "team-prs": "No open team PRs",
 };
 
 type PrFilter = "all" | "ready";
@@ -107,7 +107,7 @@ export function PRTabList() {
 
   return (
     <>
-      <div className="flex items-center gap-1 border-b border-border/50">
+      <div className="flex items-center gap-1 border-b border-border">
         {TABS.map((tab) => {
           const count = getTabCount(tab.id);
           const countBadge = (
@@ -116,7 +116,7 @@ export function PRTabList() {
                 "ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums",
                 activeTab === tab.id
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground",
+                  : "bg-foreground/10 text-foreground/60",
               )}
             >
               {count ?? "–"}
@@ -153,20 +153,20 @@ export function PRTabList() {
         })}
 
         <div className="ml-auto flex items-center gap-3">
-          <div className="flex items-center gap-1 rounded-lg border border-border/50 p-0.5">
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/50 p-0.5">
             <Button
-              variant={prFilter === "all" ? "secondary" : "ghost"}
+              variant={prFilter === "all" ? "default" : "ghost"}
               size="xs"
               onClick={() => setPrFilter("all")}
             >
               All
             </Button>
             <Button
-              variant={prFilter === "ready" ? "secondary" : "ghost"}
+              variant={prFilter === "ready" ? "default" : "ghost"}
               size="xs"
               onClick={() => setPrFilter("ready")}
             >
-              Ready to merge
+              Open
             </Button>
           </div>
           <span className="text-xs text-muted-foreground">
