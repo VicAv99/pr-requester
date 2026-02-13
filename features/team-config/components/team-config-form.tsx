@@ -28,21 +28,6 @@ import type {
   TeamWithMembers,
 } from "@/types/team-config";
 
-function getInitialOrg(): GitHubOrg | null {
-  const existing = getTeamConfig();
-  if (!existing) return null;
-  return {
-    login: existing.org,
-    avatar_url: existing.orgAvatarUrl,
-    description: null,
-  };
-}
-
-function getInitialTeamSlugs(): string[] {
-  const existing = getTeamConfig();
-  return existing?.teams.map((t) => t.slug) ?? [];
-}
-
 export function TeamConfigForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -52,19 +37,25 @@ export function TeamConfigForm() {
   const [patSaving, setPatSaving] = useState(false);
   const [patError, setPatError] = useState<string | null>(null);
 
-  // Check if a PAT is already stored (returning user)
+  const [selectedOrg, setSelectedOrg] = useState<GitHubOrg | null>(null);
+  const [selectedTeamSlugs, setSelectedTeamSlugs] = useState<string[]>([]);
+
+  // Hydrate from localStorage + check if PAT is already stored
   useEffect(() => {
+    const existing = getTeamConfig();
+    if (existing) {
+      setSelectedOrg({
+        login: existing.org,
+        avatar_url: existing.orgAvatarUrl,
+        description: null,
+      });
+      setSelectedTeamSlugs(existing.teams.map((t) => t.slug));
+    }
+
     fetch("/api/github/orgs").then((res) => {
       if (res.ok) setPatSaved(true);
     });
   }, []);
-
-  const [selectedOrg, setSelectedOrg] = useState<GitHubOrg | null>(
-    getInitialOrg,
-  );
-  const [selectedTeamSlugs, setSelectedTeamSlugs] = useState<string[]>(
-    getInitialTeamSlugs,
-  );
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSavePat = useCallback(async () => {
