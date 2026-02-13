@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useQueryState, parseAsStringLiteral } from "nuqs";
 import { cn } from "@/lib/utils";
@@ -49,7 +48,10 @@ const READY_EMPTY_MESSAGES: Record<DashboardTab, string> = {
 };
 
 export function PRTabList() {
-  const [activeTab, setActiveTab] = useState<DashboardTab>("assigned");
+  const [activeTab, setActiveTab] = useQueryState(
+    "tab",
+    parseAsStringLiteral(["assigned", "team-prs"] as const).withDefault("assigned"),
+  );
   const [prFilter, setPrFilter] = useQueryState(
     "filter",
     parseAsStringLiteral(["all", "open"] as const).withDefault("all"),
