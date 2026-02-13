@@ -4,6 +4,11 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PRCard } from "./pr-card";
 import { PRCardSkeleton } from "./pr-card-skeleton";
 import { PREmptyState } from "./pr-empty-state";
@@ -18,9 +23,19 @@ function isReadyToMerge(pr: PullRequest): boolean {
   return pr.reviewStatus === "approved" && !pr.isDraft;
 }
 
-const TABS: { id: DashboardTab; label: string }[] = [
-  { id: "assigned", label: "Assigned to Me" },
-  { id: "team-prs", label: "My Team's PRs" },
+const TABS: { id: DashboardTab; label: string; tooltip?: string }[] = [
+  {
+    id: "assigned",
+    label: "Assigned to Me",
+    tooltip:
+      "Shows open PRs where your review has been requested, either directly or through a team (e.g. CODEOWNERS).",
+  },
+  {
+    id: "team-prs",
+    label: "My Team's PRs",
+    tooltip:
+      "Shows open PRs authored by your selected team members. Your own PRs are excluded.",
+  },
   { id: "needs-review", label: "Needs Team Review" },
 ];
 
@@ -103,6 +118,19 @@ export function PRTabList() {
       <div className="flex items-center gap-1 border-b border-border/50">
         {TABS.map((tab) => {
           const count = getTabCount(tab.id);
+          const countBadge = (
+            <span
+              className={cn(
+                "ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums",
+                activeTab === tab.id
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground",
+              )}
+            >
+              {count ?? "–"}
+            </span>
+          );
+
           return (
             <button
               key={tab.id}
@@ -115,16 +143,16 @@ export function PRTabList() {
               )}
             >
               {tab.label}
-              <span
-                className={cn(
-                  "ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums",
-                  activeTab === tab.id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                {count ?? "–"}
-              </span>
+              {tab.tooltip ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>{countBadge}</TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    {tab.tooltip}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                countBadge
+              )}
               {activeTab === tab.id && (
                 <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary" />
               )}
