@@ -18,8 +18,8 @@ import { useSelectedMembers } from "../hooks/use-selected-members";
 import type { DashboardTab, PullRequest } from "../types/dashboard";
 import { getRelativeTime } from "../utils/relative-time";
 
-function isReadyToMerge(pr: PullRequest): boolean {
-  return pr.reviewStatus === "approved" && !pr.isDraft;
+function isOpenForReview(pr: PullRequest): boolean {
+  return !pr.isDraft;
 }
 
 const TABS: { id: DashboardTab; label: string; tooltip?: string }[] = [
@@ -67,7 +67,7 @@ export function PRTabList() {
   }
 
   function applyFilter(prs: PullRequest[]): PullRequest[] {
-    if (prFilter === "ready") return prs.filter(isReadyToMerge);
+    if (prFilter === "ready") return prs.filter(isOpenForReview);
     return prs;
   }
 
