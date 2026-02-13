@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useQueryState, parseAsStringLiteral } from "nuqs";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,11 +48,12 @@ const READY_EMPTY_MESSAGES: Record<DashboardTab, string> = {
   "team-prs": "No open team PRs",
 };
 
-type PrFilter = "all" | "ready";
-
 export function PRTabList() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("assigned");
-  const [prFilter, setPrFilter] = useState<PrFilter>("all");
+  const [prFilter, setPrFilter] = useQueryState(
+    "filter",
+    parseAsStringLiteral(["all", "open"] as const).withDefault("all"),
+  );
   const selectedMembers = useSelectedMembers();
 
   const assignedQuery = useQuery(dashboardQueries.assigned());
@@ -67,7 +69,7 @@ export function PRTabList() {
   }
 
   function applyFilter(prs: PullRequest[]): PullRequest[] {
-    if (prFilter === "ready") return prs.filter(isOpenForReview);
+    if (prFilter === "open") return prs.filter(isOpenForReview);
     return prs;
   }
 
@@ -162,9 +164,9 @@ export function PRTabList() {
               All
             </Button>
             <Button
-              variant={prFilter === "ready" ? "default" : "ghost"}
+              variant={prFilter === "open" ? "default" : "ghost"}
               size="xs"
-              onClick={() => setPrFilter("ready")}
+              onClick={() => setPrFilter("open")}
             >
               Open
             </Button>
@@ -198,7 +200,7 @@ export function PRTabList() {
         ) : currentData.length === 0 ? (
           <PREmptyState
             message={
-              prFilter === "ready"
+              prFilter === "open"
                 ? READY_EMPTY_MESSAGES[activeTab]
                 : EMPTY_MESSAGES[activeTab]
             }
