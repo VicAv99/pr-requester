@@ -33,6 +33,7 @@ export function TeamSelect({
   );
 
   const teamSlugs = teams?.map((t) => t.slug) ?? [];
+  const teamMap = new Map(teams?.map((t) => [t.slug, t]) ?? []);
   const disabled = !org;
 
   return (
@@ -63,7 +64,7 @@ export function TeamSelect({
         >
           <ComboboxChips ref={chipsRef}>
             {value.map((slug) => {
-              const team = teams?.find((t) => t.slug === slug);
+              const team = teamMap.get(slug);
               return (
                 <ComboboxChip key={slug}>
                   {team?.name ?? slug}
@@ -74,17 +75,20 @@ export function TeamSelect({
           </ComboboxChips>
           <ComboboxContent anchor={chipsRef}>
             <ComboboxList>
-              {teams?.map((team) => (
-                <ComboboxItem key={team.slug} value={team.slug}>
-                  <UsersIcon className="size-4 text-muted-foreground" />
-                  <span>
-                    {team.name}
-                    <span className="ml-2 text-muted-foreground">
-                      {team.slug}
+              {(slug: string) => {
+                const team = teamMap.get(slug);
+                return (
+                  <ComboboxItem key={slug} value={slug}>
+                    <UsersIcon className="size-4 text-muted-foreground" />
+                    <span>
+                      {team?.name ?? slug}
+                      <span className="ml-2 text-muted-foreground">
+                        {team?.slug ?? slug}
+                      </span>
                     </span>
-                  </span>
-                </ComboboxItem>
-              ))}
+                  </ComboboxItem>
+                );
+              }}
             </ComboboxList>
             <ComboboxEmpty>No teams found in this organization</ComboboxEmpty>
           </ComboboxContent>
