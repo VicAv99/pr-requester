@@ -4,6 +4,11 @@ import { UserAvatar } from "./user-avatar";
 import { ReviewStatusBadge } from "./review-status-badge";
 import { getRelativeTime } from "../utils/relative-time";
 import { ExternalLinkIcon, GitPullRequestDraftIcon } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const STATUS_BORDER: Record<ReviewStatus, string> = {
   approved: "border-l-status-approved",
@@ -93,11 +98,19 @@ export function PRCard({ pr }: PRCardProps) {
           {pr.reviewers.length > 0 && (
             <div className="flex -space-x-1.5">
               {pr.reviewers.map((reviewer) => (
-                <UserAvatar
-                  key={reviewer.username}
-                  username={reviewer.username}
-                  className="size-5 ring-2 ring-card"
-                />
+                <Tooltip key={reviewer.username}>
+                  <TooltipTrigger asChild>
+                    <div className="transition-transform duration-200 hover:-translate-y-1 hover:z-10">
+                      <UserAvatar
+                        username={reviewer.username}
+                        className="size-5 ring-2 ring-card"
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    {reviewer.username}
+                  </TooltipContent>
+                </Tooltip>
               ))}
             </div>
           )}
