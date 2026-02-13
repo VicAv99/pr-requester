@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { getAuthUser } from "@/lib/auth-cookies";
 import {
   Card,
   CardContent,
@@ -5,9 +7,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { GitHubLoginButton } from "@/features/auth/components/github-login-button";
+import { PATLoginForm } from "@/features/auth/components/pat-login-form";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const user = await getAuthUser();
+
+  if (user) {
+    redirect("/");
+  }
+
   return (
     <div className="bg-dot-grid flex min-h-screen items-center justify-center">
       <div className="dashboard-gradient absolute inset-0" />
@@ -17,11 +25,12 @@ export default function LoginPage() {
             Requester
           </CardTitle>
           <CardDescription>
-            Sign in to access your GitHub review dashboard
+            Enter your GitHub Personal Access Token to access your review
+            dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <GitHubLoginButton />
+          <PATLoginForm />
         </CardContent>
       </Card>
     </div>

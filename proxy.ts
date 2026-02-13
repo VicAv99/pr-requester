@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 
-export default async function proxy(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: request.headers,
-  });
+export default function proxy(request: NextRequest) {
+  const pat = request.cookies.get("github-pat")?.value;
+  const user = request.cookies.get("github-user")?.value;
 
-  if (!session) {
+  if (!pat || !user) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -14,5 +12,5 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!login|api/auth|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!login|api|_next/static|_next/image|favicon.ico).*)"],
 };
