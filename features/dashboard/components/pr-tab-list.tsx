@@ -9,7 +9,14 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { XIcon } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ArrowUpDownIcon, XIcon } from "lucide-react";
 import { PRCard } from "./pr-card";
 import { PRCardSkeleton } from "./pr-card-skeleton";
 import { PREmptyState } from "./pr-empty-state";
@@ -17,7 +24,12 @@ import { MemberPicker } from "./member-picker";
 import { UserAvatar } from "./user-avatar";
 import { dashboardQueries } from "../queries";
 import { useSelectedMembers } from "../hooks/use-selected-members";
-import type { DashboardTab, PullRequest } from "../types/dashboard";
+import type {
+  DashboardTab,
+  PullRequest,
+  ReviewStatus,
+  SortOption,
+} from "../types/dashboard";
 import { getRelativeTime } from "../utils/relative-time";
 
 function isOpenForReview(pr: PullRequest): boolean {
@@ -62,6 +74,12 @@ export function PRTabList() {
     "author",
     parseAsString.withDefault(""),
   );
+  const [sort, setSort] = useQueryState(
+    "sort",
+    parseAsStringLiteral(["updated", "status", "author"] as const).withDefault(
+      "updated",
+    ),
+  );
   const selectedMembers = useSelectedMembers();
 
   const assignedQuery = useQuery(dashboardQueries.assigned());
@@ -80,7 +98,28 @@ export function PRTabList() {
     let filtered = prs;
     if (prFilter === "open") filtered = filtered.filter(isOpenForReview);
     if (authorFilter) filtered = filtered.filter((pr) => pr.author === authorFilter);
-    return filtered;
+    return applySort(filtered);
+  }
+
+  function applySort(prs: PullRequest[]): PullRequest[] {
+    if (sort === "updated") return prs;
+    if (sort === "author") {
+      return [...prs].sort((a, b) =>
+        a.author.localeCompare(b.author, undefined, { sensitivity: "base" }),
+      );
+    }
+    // sort === "status": most actionable first
+    const STATUS_PRIORITY: Record<ReviewStatus, number> = {
+      changes_requested: 0,
+      pending: 1,
+      commented: 2,
+      approved: 3,
+    };
+    return [...prs].sort((a, b) => {
+      const aScore = a.isDraft ? 4 : STATUS_PRIORITY[a.reviewStatus];
+      const bScore = b.isDraft ? 4 : STATUS_PRIORITY[b.reviewStatus];
+      return aScore - bScore;
+    });
   }
 
   function getTabCount(tabId: DashboardTab): number | undefined {
@@ -181,6 +220,17 @@ export function PRTabList() {
               Open
             </Button>
           </div>
+          <Select value={sort} onValueChange={(v) => setSort(v as SortOption)}>
+            <SelectTrigger size="sm">
+              <ArrowUpDownIcon className="size-3 text-muted-foreground" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="updated">Updated</SelectItem>
+              <SelectItem value="status">Status</SelectItem>
+              <SelectItem value="author">Author</SelectItem>
+            </SelectContent>
+          </Select>
           <span className="text-xs text-muted-foreground">
             Last updated:{" "}
             <span className="font-mono">{lastUpdatedAt}</span>

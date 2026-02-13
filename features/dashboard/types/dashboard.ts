@@ -33,3 +33,5 @@ export type PullRequest = {
 };
 
 export type DashboardTab = "assigned" | "team-prs";
+
+export type SortOption = "updated" | "status" | "author";
