@@ -6,6 +6,7 @@ import { KeyRoundIcon, Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { tryCatch } from "@/utils/try-catch";
+import { Kbd } from "@/components/ui/kbd";
 import {
   Field,
   FieldLabel,
@@ -81,8 +82,8 @@ export function PATLoginForm() {
           >
             classic token
           </a>{" "}
-          with <code>repo</code>, <code>read:org</code>, and{" "}
-          <code>user:email</code> scopes.
+          with <Kbd>repo</Kbd>, <Kbd>read:org</Kbd>, and{" "}
+          <Kbd>user:email</Kbd> scopes.
         </FieldDescription>
         {error && <FieldError>{error}</FieldError>}
       </Field>
