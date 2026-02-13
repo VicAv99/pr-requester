@@ -15,7 +15,6 @@ import { PREmptyState } from "./pr-empty-state";
 import { MemberPicker } from "./member-picker";
 import { dashboardQueries } from "../queries";
 import { useSelectedMembers } from "../hooks/use-selected-members";
-import { NEEDS_TEAM_REVIEW } from "../constants/mock-data";
 import type { DashboardTab, PullRequest } from "../types/dashboard";
 import { getRelativeTime } from "../utils/relative-time";
 
@@ -36,19 +35,16 @@ const TABS: { id: DashboardTab; label: string; tooltip?: string }[] = [
     tooltip:
       "Shows open PRs authored by your selected team members. Your own PRs are excluded.",
   },
-  { id: "needs-review", label: "Needs Team Review" },
 ];
 
 const EMPTY_MESSAGES: Record<DashboardTab, string> = {
   assigned: "No reviews assigned to you",
   "team-prs": "No open PRs from your team",
-  "needs-review": "No PRs need your team's review",
 };
 
 const READY_EMPTY_MESSAGES: Record<DashboardTab, string> = {
   assigned: "No assigned PRs are ready to merge",
   "team-prs": "No team PRs are ready to merge",
-  "needs-review": "No PRs needing review are ready to merge",
 };
 
 type PrFilter = "all" | "ready";
@@ -67,8 +63,6 @@ export function PRTabList() {
         return assignedQuery.data ?? [];
       case "team-prs":
         return teamPrsQuery.data ?? [];
-      case "needs-review":
-        return NEEDS_TEAM_REVIEW;
     }
   }
 
@@ -85,8 +79,6 @@ export function PRTabList() {
       case "team-prs":
         if (teamPrsQuery.isLoading) return undefined;
         return applyFilter(teamPrsQuery.data ?? []).length;
-      default:
-        return applyFilter(getTabData(tabId)).length;
     }
   }
 

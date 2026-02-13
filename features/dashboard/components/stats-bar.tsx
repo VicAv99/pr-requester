@@ -3,7 +3,6 @@ import {
   GitPullRequestIcon,
   InboxIcon,
   UsersIcon,
-  EyeIcon,
 } from "lucide-react";
 
 type StatCardProps = {
@@ -44,15 +43,13 @@ function StatCard({ label, value, icon: Icon, accentColor, delay }: StatCardProp
 type StatsBarProps = {
   assignedCount: number;
   teamPrsCount: number;
-  needsReviewCount: number;
 };
 
 export function StatsBar({
   assignedCount,
   teamPrsCount,
-  needsReviewCount,
 }: StatsBarProps) {
-  const total = assignedCount + teamPrsCount + needsReviewCount;
+  const total = assignedCount + teamPrsCount;
 
   const stats = [
     {
@@ -73,16 +70,10 @@ export function StatsBar({
       icon: UsersIcon,
       accentColor: "oklch(0.75 0.18 155)",
     },
-    {
-      label: "Needs Team Review",
-      value: needsReviewCount,
-      icon: EyeIcon,
-      accentColor: "oklch(0.72 0.18 25)",
-    },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+    <div className="grid grid-cols-3 gap-3">
       {stats.map((stat, i) => (
         <StatCard key={stat.label} {...stat} delay={i * 100} />
       ))}

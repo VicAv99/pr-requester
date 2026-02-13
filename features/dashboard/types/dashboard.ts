@@ -31,4 +31,4 @@ export type PullRequest = {
   url: string;
 };
 
-export type DashboardTab = "assigned" | "team-prs" | "needs-review";
+export type DashboardTab = "assigned" | "team-prs";
