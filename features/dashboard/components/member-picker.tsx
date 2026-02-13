@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Combobox,
   ComboboxChips,
@@ -41,6 +42,7 @@ export function MemberPicker() {
   const teamConfig = useTeamConfig();
   const selectedLogins = useSelectedMembers();
   const allMembers = getUniqueMembers(teamConfig);
+  const [expanded, setExpanded] = useState(false);
 
   if (allMembers.length === 0) {
     return (
@@ -59,6 +61,10 @@ export function MemberPicker() {
 
   const memberMap = new Map(allMembers.map((m) => [m.login, m]));
   const allLogins = allMembers.map((m) => m.login);
+  const hasOverflow = selectedLogins.length > MAX_VISIBLE_CHIPS;
+  const visibleLogins = expanded
+    ? selectedLogins
+    : selectedLogins.slice(0, MAX_VISIBLE_CHIPS);
 
   return (
     <Combobox
@@ -68,7 +74,7 @@ export function MemberPicker() {
       items={allLogins}
     >
       <ComboboxChips ref={chipsRef}>
-        {selectedLogins.slice(0, MAX_VISIBLE_CHIPS).map((login) => {
+        {visibleLogins.map((login) => {
           const member = memberMap.get(login);
           return (
             <ComboboxChip key={login} className="border border-border bg-background">
@@ -83,12 +89,16 @@ export function MemberPicker() {
             </ComboboxChip>
           );
         })}
-        {selectedLogins.length > MAX_VISIBLE_CHIPS && (
+        {hasOverflow && !expanded && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="flex h-[calc(--spacing(5.25))] items-center rounded-md border border-border bg-background px-1.5 text-xs font-medium text-muted-foreground">
+              <button
+                type="button"
+                onClick={() => setExpanded(true)}
+                className="flex h-[calc(--spacing(5.25))] items-center rounded-md border border-border bg-background px-1.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+              >
                 +{selectedLogins.length - MAX_VISIBLE_CHIPS}
-              </span>
+              </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="flex flex-col gap-1.5 p-2">
               {selectedLogins.slice(MAX_VISIBLE_CHIPS).map((login) => {
@@ -108,6 +118,15 @@ export function MemberPicker() {
               })}
             </TooltipContent>
           </Tooltip>
+        )}
+        {hasOverflow && expanded && (
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="flex h-[calc(--spacing(5.25))] items-center rounded-md border border-border bg-background px-1.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+          >
+            Show less
+          </button>
         )}
         <ComboboxChipsInput placeholder="Search team members..." />
       </ComboboxChips>
