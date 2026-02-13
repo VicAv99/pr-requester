@@ -1,4 +1,4 @@
-import { QueryProvider } from "@/lib/query-provider";
+import { QueryProvider } from "@/components/query-provider";
 import { PropsWithChildren } from "react";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { ThemeProvider } from "@/components/theme-provider";
