@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { PullRequest, ReviewStatus } from "../types/dashboard";
 import { UserAvatar } from "./user-avatar";
 import { ReviewStatusBadge } from "./review-status-badge";
 import { getRelativeTime } from "../utils/relative-time";
 import {
+  CheckIcon,
+  ClipboardCopyIcon,
   ExternalLinkIcon,
   GitPullRequestDraftIcon,
   UsersIcon,
@@ -26,6 +29,37 @@ type PRCardProps = {
   onAuthorClick?: (username: string) => void;
 };
 
+function CopyPromptButton({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false);
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className="mt-0.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigator.clipboard.writeText(`review this pr for me "${url}"`);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          }}
+        >
+          {copied ? (
+            <CheckIcon className="size-3.5" />
+          ) : (
+            <ClipboardCopyIcon className="size-3.5" />
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top">
+        {copied ? "Copied!" : "Copy review prompt"}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function PRCard({ pr, onAuthorClick }: PRCardProps) {
   return (
     <a
@@ -44,7 +78,10 @@ export function PRCard({ pr, onAuthorClick }: PRCardProps) {
         <h3 className="text-sm font-medium leading-snug text-card-foreground transition-colors group-hover:text-primary">
           {pr.title}
         </h3>
-        <ExternalLinkIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+        <div className="flex items-center gap-1.5">
+          <CopyPromptButton url={pr.url} />
+          <ExternalLinkIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+        </div>
       </div>
 
       {/* Meta row */}
