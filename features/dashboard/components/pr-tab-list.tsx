@@ -30,7 +30,7 @@ import type {
   ReviewStatus,
   SortOption,
 } from "../types/dashboard";
-import { getRelativeTime } from "../utils/relative-time";
+import { useRelativeTime } from "../hooks/use-relative-time";
 
 function isOpenForReview(pr: PullRequest): boolean {
   return !pr.isDraft;
@@ -139,19 +139,11 @@ export function PRTabList() {
 
   const currentData = applyFilter(getTabData(activeTab));
 
-  const lastUpdatedAt = (() => {
-    if (activeTab === "assigned" && assignedQuery.dataUpdatedAt) {
-      return getRelativeTime(
-        new Date(assignedQuery.dataUpdatedAt).toISOString(),
-      );
-    }
-    if (activeTab === "team-prs" && teamPrsQuery.dataUpdatedAt) {
-      return getRelativeTime(
-        new Date(teamPrsQuery.dataUpdatedAt).toISOString(),
-      );
-    }
-    return "just now";
-  })();
+  const activeTimestamp =
+    activeTab === "assigned"
+      ? assignedQuery.dataUpdatedAt
+      : teamPrsQuery.dataUpdatedAt;
+  const lastUpdatedAt = useRelativeTime(activeTimestamp);
 
   const showEmptyPrompt =
     activeTab === "team-prs" && selectedMembers.length === 0;
