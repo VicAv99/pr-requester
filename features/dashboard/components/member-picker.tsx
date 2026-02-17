@@ -21,22 +21,9 @@ import { HighlightMatch } from "@/components/highlight-match";
 import { useTeamConfig } from "@/hooks/use-team-config";
 import { useSelectedMembers } from "../hooks/use-selected-members";
 import { setSelectedMembers } from "../utils/selected-members-storage";
-import type { TeamConfig, TeamMember } from "@/types/team-config";
+import { getUniqueMembers } from "../utils/get-unique-members";
 
 const MAX_VISIBLE_CHIPS = 3;
-
-function getUniqueMembers(config: TeamConfig | null): TeamMember[] {
-  if (!config) return [];
-  const seen = new Map<string, TeamMember>();
-  for (const team of config.teams) {
-    for (const member of team.members) {
-      if (!seen.has(member.login)) {
-        seen.set(member.login, member);
-      }
-    }
-  }
-  return Array.from(seen.values());
-}
 
 export function MemberPicker() {
   const chipsRef = useComboboxAnchor();

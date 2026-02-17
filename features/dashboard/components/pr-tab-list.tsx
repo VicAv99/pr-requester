@@ -21,6 +21,7 @@ import { PRCard } from "./pr-card";
 import { PRCardSkeleton } from "./pr-card-skeleton";
 import { PREmptyState } from "./pr-empty-state";
 import { MemberPicker } from "./member-picker";
+import { GroupPicker } from "./group-picker";
 import { UserAvatar } from "./user-avatar";
 import { dashboardQueries } from "../queries";
 import { useSelectedMembers } from "../hooks/use-selected-members";
@@ -231,7 +232,8 @@ export function PRTabList() {
       </div>
 
       {activeTab === "team-prs" && (
-        <div className="mt-4">
+        <div className="mt-4 space-y-3">
+          <GroupPicker />
           <MemberPicker />
         </div>
       )}
