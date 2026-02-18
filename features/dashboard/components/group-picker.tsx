@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +53,16 @@ export function GroupPicker() {
   const allMembers = getUniqueMembers(teamConfig);
   const knownLogins = new Set(allMembers.map((m) => m.login));
 
+  const activeGroup = useMemo(() => {
+    if (selectedMembers.length === 0 || groups.length === 0) return null;
+    const selectedSet = new Set(selectedMembers);
+    return groups.find(
+      (g) =>
+        g.members.length === selectedSet.size &&
+        g.members.every((m) => selectedSet.has(m)),
+    ) ?? null;
+  }, [groups, selectedMembers]);
+
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [groupName, setGroupName] = useState("");
 
@@ -71,14 +81,15 @@ export function GroupPicker() {
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
-            <FolderIcon className="size-3.5" />
-            Groups
-            <ChevronDownIcon className="size-3 text-muted-foreground" />
-          </Button>
-        </DropdownMenuTrigger>
+      <div className="flex items-center gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <FolderIcon className="size-3.5" />
+              Groups
+              <ChevronDownIcon className="size-3 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="min-w-48">
           <DropdownMenuLabel>Saved groups</DropdownMenuLabel>
           {groups.length === 0 ? (
@@ -116,7 +127,13 @@ export function GroupPicker() {
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
-      </DropdownMenu>
+        </DropdownMenu>
+        {activeGroup && (
+          <span className="text-sm text-muted-foreground">
+            {activeGroup.name}
+          </span>
+        )}
+      </div>
 
       {/* Create group dialog */}
       <AlertDialog
