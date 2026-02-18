@@ -4,6 +4,17 @@ import type { PullRequest } from "./types/dashboard";
 export const dashboardQueries = {
   all: () => ["dashboard"],
 
+  viewer: () =>
+    queryOptions({
+      queryKey: [...dashboardQueries.all(), "viewer"],
+      queryFn: async (): Promise<{ login: string }> => {
+        const res = await fetch("/api/github/user");
+        if (!res.ok) throw new Error("Failed to fetch user");
+        return res.json();
+      },
+      staleTime: Infinity,
+    }),
+
   assigned: () =>
     queryOptions({
       queryKey: [...dashboardQueries.all(), "assigned"],

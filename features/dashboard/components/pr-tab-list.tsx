@@ -83,6 +83,7 @@ export function PRTabList() {
   );
   const selectedMembers = useSelectedMembers();
 
+  const viewerQuery = useQuery(dashboardQueries.viewer());
   const assignedQuery = useQuery(dashboardQueries.assigned());
   const teamPrsQuery = useQuery(dashboardQueries.teamPrs(selectedMembers));
 
@@ -103,7 +104,11 @@ export function PRTabList() {
   }
 
   function applySort(prs: PullRequest[]): PullRequest[] {
-    if (sort === "updated") return prs;
+    if (sort === "updated") {
+      return [...prs].sort(
+        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      );
+    }
     if (sort === "author") {
       return [...prs].sort((a, b) =>
         a.author.localeCompare(b.author, undefined, { sensitivity: "base" }),
@@ -281,7 +286,7 @@ export function PRTabList() {
               className="animate-fade-in-up"
               style={{ animationDelay: `${i * 60}ms` }}
             >
-              <PRCard pr={pr} onAuthorClick={setAuthorFilter} />
+              <PRCard pr={pr} onAuthorClick={setAuthorFilter} viewerLogin={viewerQuery.data?.login} />
             </div>
           ))
         )}

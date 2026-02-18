@@ -28,6 +28,7 @@ const STATUS_BORDER: Record<ReviewStatus, string> = {
 type PRCardProps = {
   pr: PullRequest;
   onAuthorClick?: (username: string) => void;
+  viewerLogin?: string;
 };
 
 function CopyPromptButton({ url }: { url: string }) {
@@ -61,7 +62,13 @@ function CopyPromptButton({ url }: { url: string }) {
   );
 }
 
-export function PRCard({ pr, onAuthorClick }: PRCardProps) {
+export function PRCard({ pr, onAuthorClick, viewerLogin }: PRCardProps) {
+  const viewerApproved = viewerLogin
+    ? pr.reviewers.some(
+        (r) => r.username === viewerLogin && r.status === "approved",
+      )
+    : false;
+
   return (
     <a
       href={pr.url}
@@ -72,6 +79,7 @@ export function PRCard({ pr, onAuthorClick }: PRCardProps) {
         "hover:-translate-y-0.5 hover:border-border hover:shadow-lg hover:shadow-black/20",
         "border-l-[3px]",
         pr.isDraft ? "border-l-status-draft" : STATUS_BORDER[pr.reviewStatus],
+        viewerApproved && "opacity-60",
       )}
     >
       {/* Title row */}
@@ -91,7 +99,7 @@ export function PRCard({ pr, onAuthorClick }: PRCardProps) {
         <span className="text-border">·</span>
         <span className="font-mono">#{pr.number}</span>
         <span className="text-border">·</span>
-        <span>{getRelativeTime(pr.createdAt)}</span>
+        <span>{getRelativeTime(pr.updatedAt)}</span>
         {pr.isDraft && (
           <>
             <span className="text-border">·</span>
