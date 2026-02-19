@@ -193,3 +193,38 @@
   animation: count-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   opacity: 0;
 }
+
+/* diff2html overrides */
+.diff-viewer .d2h-wrapper {
+  border: none;
+}
+
+.diff-viewer .d2h-file-wrapper {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.diff-viewer .d2h-file-header {
+  border-bottom: 1px solid var(--border);
+}
+
+.diff-viewer .d2h-file-collapse {
+  display: none;
+}
+
+.dark .diff-viewer .d2h-file-header {
+  background-color: oklch(0.27 0.008 75);
+}
+
+.dark .diff-viewer .d2h-code-linenumber,
+.dark .diff-viewer .d2h-code-side-linenumber {
+  background-color: oklch(0.24 0.006 75);
+  color: oklch(0.50 0.01 75);
+}
+
+.dark .diff-viewer .d2h-emptyplaceholder,
+.dark .diff-viewer .d2h-code-side-emptyplaceholder {
+  background-color: oklch(0.22 0.006 75);
+}

@@ -7,11 +7,13 @@ import { getRelativeTime } from "../utils/relative-time";
 import {
   CheckIcon,
   ClipboardCopyIcon,
+  DiffIcon,
   ExternalLinkIcon,
   FileIcon,
   GitPullRequestDraftIcon,
   UsersIcon,
 } from "lucide-react";
+import Link from "next/link";
 import {
   Tooltip,
   TooltipContent,
@@ -89,6 +91,18 @@ export function PRCard({ pr, onAuthorClick, viewerLogin }: PRCardProps) {
         </h3>
         <div className="flex items-center gap-1.5">
           <CopyPromptButton url={pr.url} />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href={`/pr/${pr.repo}/${pr.number}`}
+                className="mt-0.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <DiffIcon className="size-3.5" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="top">View diff</TooltipContent>
+          </Tooltip>
           <ExternalLinkIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
         </div>
       </div>
