@@ -25,7 +25,11 @@ import { getUniqueMembers } from "../utils/get-unique-members";
 
 const MAX_VISIBLE_CHIPS = 3;
 
-export function MemberPicker() {
+type MemberPickerProps = {
+  onMemberDoubleClick?: (login: string) => void;
+};
+
+export function MemberPicker({ onMemberDoubleClick }: MemberPickerProps) {
   const chipsRef = useComboboxAnchor();
   const teamConfig = useTeamConfig();
   const selectedLogins = useSelectedMembers();
@@ -70,7 +74,11 @@ export function MemberPicker() {
         {visibleLogins.map((login) => {
           const member = memberMap.get(login);
           return (
-            <ComboboxChip key={login} className="border border-border bg-background">
+            <ComboboxChip
+              key={login}
+              className="border border-border bg-background"
+              onDoubleClick={() => onMemberDoubleClick?.(login)}
+            >
               {member && (
                 <img
                   src={member.avatar_url}

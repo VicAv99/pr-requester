@@ -239,7 +239,7 @@ export function PRTabList() {
       {activeTab === "team-prs" && (
         <div className="mt-4 space-y-3">
           <GroupPicker />
-          <MemberPicker />
+          <MemberPicker onMemberDoubleClick={setAuthorFilter} />
         </div>
       )}
 
