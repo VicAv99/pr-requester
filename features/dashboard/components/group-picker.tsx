@@ -32,6 +32,7 @@ import {
   Trash2Icon,
   CheckIcon,
   XIcon,
+  UsersIcon,
 } from "lucide-react";
 import { useTeamConfig } from "@/hooks/use-team-config";
 import { useMemberGroups } from "../hooks/use-member-groups";
@@ -44,7 +45,11 @@ import {
 } from "../utils/member-groups-storage";
 import { getUniqueMembers } from "../utils/get-unique-members";
 
-type DialogMode = { type: "create" } | { type: "manage" } | null;
+type DialogMode =
+  | { type: "create" }
+  | { type: "manage" }
+  | { type: "edit"; groupId: string }
+  | null;
 
 export function GroupPicker() {
   const teamConfig = useTeamConfig();
@@ -65,6 +70,15 @@ export function GroupPicker() {
 
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [groupName, setGroupName] = useState("");
+  const [editGroupName, setEditGroupName] = useState("");
+  const [editGroupMembers, setEditGroupMembers] = useState<string[]>([]);
+  const [editMemberSearch, setEditMemberSearch] = useState("");
+
+  const filteredEditMembers = editMemberSearch
+    ? allMembers.filter((m) =>
+        m.login.toLowerCase().includes(editMemberSearch.toLowerCase()),
+      )
+    : allMembers;
 
   function applyGroup(members: string[]) {
     const validMembers = members.filter((login) => knownLogins.has(login));
@@ -77,6 +91,36 @@ export function GroupPicker() {
     addMemberGroup(trimmed, selectedMembers);
     setGroupName("");
     setDialogMode(null);
+  }
+
+  function handleStartEdit(groupId: string) {
+    const group = groups.find((g) => g.id === groupId);
+    if (!group) return;
+    setEditGroupName(group.name);
+    setEditGroupMembers(
+      group.members.filter((login) => knownLogins.has(login)),
+    );
+    setEditMemberSearch("");
+    setDialogMode({ type: "edit", groupId });
+  }
+
+  function handleSaveEdit() {
+    if (dialogMode?.type !== "edit") return;
+    const trimmed = editGroupName.trim();
+    if (!trimmed || editGroupMembers.length === 0) return;
+    updateMemberGroup(dialogMode.groupId, {
+      name: trimmed,
+      members: editGroupMembers,
+    });
+    setDialogMode({ type: "manage" });
+  }
+
+  function toggleEditMember(login: string) {
+    setEditGroupMembers((prev) =>
+      prev.includes(login)
+        ? prev.filter((l) => l !== login)
+        : [...prev, login],
+    );
   }
 
   return (
@@ -133,6 +177,17 @@ export function GroupPicker() {
             {activeGroup.name}
           </span>
         )}
+        {selectedMembers.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            onClick={() => setSelectedMembers([])}
+          >
+            <XIcon className="size-3" />
+            Clear all
+          </Button>
+        )}
       </div>
 
       {/* Create group dialog */}
@@ -186,7 +241,7 @@ export function GroupPicker() {
           <AlertDialogHeader>
             <AlertDialogTitle>Manage groups</AlertDialogTitle>
             <AlertDialogDescription>
-              Rename or delete your saved member groups.
+              Edit, rename, or delete your saved member groups.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-1">
@@ -194,6 +249,7 @@ export function GroupPicker() {
               <GroupRow
                 key={group.id}
                 group={group}
+                onEdit={() => handleStartEdit(group.id)}
                 onClose={() => {
                   if (groups.length <= 1) setDialogMode(null);
                 }}
@@ -210,15 +266,100 @@ export function GroupPicker() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit group dialog */}
+      <AlertDialog
+        open={dialogMode?.type === "edit"}
+        onOpenChange={(open) => {
+          if (!open) setDialogMode({ type: "manage" });
+        }}
+      >
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Edit group</AlertDialogTitle>
+            <AlertDialogDescription>
+              Update the name and members of this group.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3">
+            <Input
+              placeholder="Group name"
+              value={editGroupName}
+              onChange={(e) => setEditGroupName(e.target.value)}
+            />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Members</span>
+                <Badge variant="secondary">
+                  {editGroupMembers.length} selected
+                </Badge>
+              </div>
+              <Input
+                placeholder="Search members..."
+                value={editMemberSearch}
+                onChange={(e) => setEditMemberSearch(e.target.value)}
+                className="h-8 text-sm"
+              />
+              <div className="max-h-48 overflow-y-auto rounded-md border">
+                {filteredEditMembers.map((member) => {
+                  const isSelected = editGroupMembers.includes(member.login);
+                  return (
+                    <button
+                      key={member.login}
+                      type="button"
+                      onClick={() => toggleEditMember(member.login)}
+                      className={cn(
+                        "flex w-full items-center gap-2 px-2 py-1.5 text-sm transition-colors hover:bg-accent",
+                        isSelected && "bg-accent/50",
+                      )}
+                    >
+                      <img
+                        src={member.avatar_url}
+                        alt=""
+                        className="size-5 rounded-full"
+                      />
+                      <span className="flex-1 truncate text-left">
+                        {member.login}
+                      </span>
+                      {isSelected && (
+                        <CheckIcon className="size-3.5 text-primary" />
+                      )}
+                    </button>
+                  );
+                })}
+                {filteredEditMembers.length === 0 && (
+                  <p className="py-4 text-center text-sm text-muted-foreground">
+                    No members found.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel size="sm">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              size="sm"
+              disabled={
+                !editGroupName.trim() || editGroupMembers.length === 0
+              }
+              onClick={handleSaveEdit}
+            >
+              Save changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
 
 function GroupRow({
   group,
+  onEdit,
   onClose,
 }: {
   group: { id: string; name: string; members: string[] };
+  onEdit: () => void;
   onClose: () => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -291,6 +432,13 @@ function GroupRow({
         <>
           <span className="flex-1 truncate text-sm">{group.name}</span>
           <Badge variant="secondary">{group.members.length}</Badge>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={onEdit}
+          >
+            <UsersIcon className="size-3" />
+          </Button>
           <Button
             variant="ghost"
             size="icon-xs"
