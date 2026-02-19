@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { html } from "diff2html";
+import { Diff2HtmlUI } from "diff2html/lib/ui/js/diff2html-ui-base";
 import { ColorSchemeType } from "diff2html/lib/types";
+import hljs from "highlight.js";
 import "diff2html/bundles/css/diff2html.min.css";
 
 type DiffViewerProps = {
@@ -15,19 +16,29 @@ export function DiffViewer({
   diff,
   outputFormat = "line-by-line",
 }: DiffViewerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
 
   const colorScheme =
     resolvedTheme === "dark" ? ColorSchemeType.DARK : ColorSchemeType.LIGHT;
 
-  const diffHtml = useMemo(() => {
-    if (!diff) return "";
-    return html(diff, {
-      outputFormat,
-      drawFileList: false,
-      matching: "lines",
-      colorScheme,
-    });
+  useEffect(() => {
+    if (!containerRef.current || !diff) return;
+
+    const ui = new Diff2HtmlUI(
+      containerRef.current,
+      diff,
+      {
+        outputFormat,
+        drawFileList: false,
+        matching: "lines",
+        colorScheme,
+        highlight: true,
+      },
+      hljs,
+    );
+    ui.draw();
+    ui.highlightCode();
   }, [diff, outputFormat, colorScheme]);
 
   if (!diff) {
@@ -38,10 +49,5 @@ export function DiffViewer({
     );
   }
 
-  return (
-    <div
-      className="diff-viewer overflow-x-auto"
-      dangerouslySetInnerHTML={{ __html: diffHtml }}
-    />
-  );
+  return <div ref={containerRef} className="diff-viewer overflow-x-auto" />;
 }
