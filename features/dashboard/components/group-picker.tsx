@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   ChevronDownIcon,
   FolderIcon,
@@ -365,6 +370,12 @@ function GroupRow({
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(group.name);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [holdingDelete, setHoldingDelete] = useState(false);
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const HOLD_DURATION = 1500;
+  const PROGRESS_R = 9;
+  const PROGRESS_CIRCUMFERENCE = 2 * Math.PI * PROGRESS_R;
 
   useEffect(() => {
     if (editing) {
@@ -372,6 +383,12 @@ function GroupRow({
       inputRef.current?.select();
     }
   }, [editing]);
+
+  useEffect(() => {
+    return () => {
+      if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+    };
+  }, []);
 
   function handleRename() {
     const trimmed = editName.trim();
@@ -388,6 +405,22 @@ function GroupRow({
     deleteMemberGroup(group.id);
     onClose();
   }
+
+  const startDeleteHold = useCallback(() => {
+    setHoldingDelete(true);
+    deleteTimerRef.current = setTimeout(() => {
+      setHoldingDelete(false);
+      handleDelete();
+    }, HOLD_DURATION);
+  }, [group.id]);
+
+  const cancelDeleteHold = useCallback(() => {
+    setHoldingDelete(false);
+    if (deleteTimerRef.current) {
+      clearTimeout(deleteTimerRef.current);
+      deleteTimerRef.current = null;
+    }
+  }, []);
 
   return (
     <div className="flex items-center gap-2 rounded-md px-2 py-1.5">
@@ -449,16 +482,45 @@ function GroupRow({
           >
             <PencilIcon className="size-3" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            className={cn(
-              "text-muted-foreground hover:text-destructive",
-            )}
-            onClick={handleDelete}
-          >
-            <Trash2Icon className="size-3" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="relative inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-destructive"
+                onPointerDown={startDeleteHold}
+                onPointerUp={cancelDeleteHold}
+                onPointerLeave={cancelDeleteHold}
+                onPointerCancel={cancelDeleteHold}
+              >
+                <svg
+                  className="absolute inset-0 -rotate-90"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r={PROGRESS_R}
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeDasharray={PROGRESS_CIRCUMFERENCE}
+                    strokeDashoffset={
+                      holdingDelete ? 0 : PROGRESS_CIRCUMFERENCE
+                    }
+                    className="text-destructive"
+                    style={{
+                      transition: holdingDelete
+                        ? `stroke-dashoffset ${HOLD_DURATION}ms linear`
+                        : "stroke-dashoffset 150ms ease-out",
+                    }}
+                  />
+                </svg>
+                <Trash2Icon className="relative size-3" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Hold to delete</TooltipContent>
+          </Tooltip>
         </>
       )}
     </div>
