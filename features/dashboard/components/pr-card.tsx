@@ -72,12 +72,9 @@ export function PRCard({ pr, onAuthorClick, viewerLogin }: PRCardProps) {
     : false;
 
   return (
-    <a
-      href={pr.url}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
       className={cn(
-        "group block rounded-xl border border-border bg-card p-4 transition-all duration-200",
+        "group relative rounded-xl border border-border bg-card p-4 transition-all duration-200",
         "hover:-translate-y-0.5 hover:border-border hover:shadow-lg hover:shadow-black/20",
         "border-l-[3px]",
         pr.isDraft ? "border-l-status-draft" : STATUS_BORDER[pr.reviewStatus],
@@ -87,16 +84,24 @@ export function PRCard({ pr, onAuthorClick, viewerLogin }: PRCardProps) {
       {/* Title row */}
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-sm font-medium leading-snug text-card-foreground transition-colors group-hover:text-primary">
-          {pr.title}
+          {/* Stretched link: ::after covers the card so the whole card opens the PR */}
+          <a
+            href={pr.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring"
+          >
+            {pr.title}
+          </a>
         </h3>
-        <div className="flex items-center gap-1.5">
+        {/* Interactive children sit above the stretched link with z-10 */}
+        <div className="relative z-10 flex items-center gap-1.5">
           <CopyPromptButton url={pr.url} />
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
                 href={`/pr/${pr.repo}/${pr.number}`}
                 className="mt-0.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground"
-                onClick={(e) => e.stopPropagation()}
               >
                 <DiffIcon className="size-3.5" />
               </Link>
@@ -146,7 +151,7 @@ export function PRCard({ pr, onAuthorClick, viewerLogin }: PRCardProps) {
           {pr.requestedTeams.length > 0 && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <span className="relative z-10 inline-flex items-center gap-1 text-xs text-muted-foreground">
                   <UsersIcon className="size-3" />
                   <span className="tabular-nums">
                     {pr.requestedTeams.length}
@@ -181,7 +186,7 @@ export function PRCard({ pr, onAuthorClick, viewerLogin }: PRCardProps) {
       <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-3">
         <button
           type="button"
-          className="flex items-center gap-2 rounded-md px-1.5 py-0.5 -ml-1.5 transition-colors hover:bg-muted"
+          className="relative z-10 flex items-center gap-2 rounded-md px-1.5 py-0.5 -ml-1.5 transition-colors hover:bg-muted"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -205,7 +210,7 @@ export function PRCard({ pr, onAuthorClick, viewerLogin }: PRCardProps) {
           </span>
 
           {pr.reviewers.length > 0 && (
-            <div className="flex -space-x-1.5">
+            <div className="relative z-10 flex -space-x-1.5">
               {pr.reviewers.map((reviewer) => (
                 <Tooltip key={reviewer.username}>
                   <TooltipTrigger asChild>
@@ -225,6 +230,6 @@ export function PRCard({ pr, onAuthorClick, viewerLogin }: PRCardProps) {
           )}
         </div>
       </div>
-    </a>
+    </div>
   );
 }
