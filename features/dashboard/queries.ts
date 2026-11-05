@@ -1,6 +1,11 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { PullRequest } from "./types/dashboard";
-import type { MemberStats, OrgRepo, StatsRange } from "./types/member-stats";
+import type {
+  MemberRepos,
+  MemberStats,
+  OrgRepo,
+  StatsRange,
+} from "./types/member-stats";
 
 export const dashboardQueries = {
   all: () => ["dashboard"],
@@ -87,5 +92,28 @@ export const dashboardQueries = {
       },
       staleTime: 10 * 60 * 1000,
       enabled: org.length > 0,
+    }),
+
+  memberRepos: (org: string, memberLogins: string[], range: StatsRange) =>
+    queryOptions({
+      queryKey: [
+        ...dashboardQueries.all(),
+        "member-repos",
+        org,
+        range,
+        [...memberLogins].sort((a, b) => a.localeCompare(b)),
+      ],
+      queryFn: async (): Promise<MemberRepos[]> => {
+        const params = new URLSearchParams({
+          org,
+          range,
+          members: memberLogins.join(","),
+        });
+        const res = await fetch(`/api/github/member-repos?${params}`);
+        if (!res.ok) throw new Error("Failed to fetch member repos");
+        return res.json();
+      },
+      staleTime: 15 * 60 * 1000,
+      enabled: org.length > 0 && memberLogins.length > 0,
     }),
 };

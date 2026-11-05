@@ -59,3 +59,17 @@ export function buildStatSearch({
       return `${base} reviewed-by:${login} -author:${login}${since ? ` updated:>=${since}` : ""}`;
   }
 }
+
+/** Searches whose results are tallied by repo for the per-member repo breakdown */
+export function buildRepoBreakdownSearch(
+  kind: "authored" | "reviewed",
+  login: string,
+  org: string,
+  since: string | null,
+): string {
+  const who =
+    kind === "authored" ? `author:${login}` : `reviewed-by:${login} -author:${login}`;
+  const dateField = kind === "authored" ? "created" : "updated";
+  const when = since ? ` ${dateField}:>=${since}` : "";
+  return `is:pr org:${org} ${who}${when}`;
+}

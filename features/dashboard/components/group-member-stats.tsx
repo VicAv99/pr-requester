@@ -24,6 +24,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import type { TeamMember } from "@/types/team-config";
 import { dashboardQueries } from "../queries";
 import {
@@ -36,6 +41,7 @@ import {
   statsSinceDate,
   type StatKey,
 } from "../utils/member-stats-search";
+import { MemberRepoList } from "./member-repo-list";
 import { RepoFilter } from "./repo-filter";
 import { UserAvatar } from "./user-avatar";
 
@@ -134,7 +140,16 @@ export function GroupMemberStats({
   const viewerInGroup = logins.includes(viewerLogin);
   const rowLogins = [viewerLogin, ...logins.filter((l) => l !== viewerLogin)];
   const query = useQuery(dashboardQueries.memberStats(org, rowLogins, range, repos));
+  const reposQuery = useQuery(dashboardQueries.memberRepos(org, rowLogins, range));
   const since = statsSinceDate(range);
+  const reposByLogin = new Map(reposQuery.data?.map((r) => [r.login, r]));
+
+  function toggleRepoFilter(repo: string) {
+    const next = repos.includes(repo)
+      ? repos.filter((r) => r !== repo)
+      : [...repos, repo];
+    setRepos(next.length > 0 ? next : null);
+  }
 
   const statsByLogin = new Map(query.data?.map((s) => [s.login, s]));
   const groupStats = query.data?.filter((s) => logins.includes(s.login));
@@ -278,30 +293,49 @@ export function GroupMemberStats({
                       )}
                     >
                       <td className="py-2 pr-3">
-                        <a
-                          href={`https://github.com/${login}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-2 hover:underline"
-                        >
-                          {member ? (
-                            <Image
-                              width={24}
-                              height={24}
-                              src={member.avatar_url}
-                              alt=""
-                              className="size-6 rounded-full"
+                        <HoverCard openDelay={250} closeDelay={100}>
+                          <HoverCardTrigger asChild>
+                            <a
+                              href={`https://github.com/${login}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-2 hover:underline"
+                            >
+                              {member ? (
+                                <Image
+                                  width={24}
+                                  height={24}
+                                  src={member.avatar_url}
+                                  alt=""
+                                  className="size-6 rounded-full"
+                                />
+                              ) : (
+                                <UserAvatar username={login} className="size-6" />
+                              )}
+                              <span className="truncate">{login}</span>
+                              {isViewer && (
+                                <span className="text-xs text-muted-foreground">
+                                  {viewerInGroup ? "(you)" : "(you, not in group)"}
+                                </span>
+                              )}
+                            </a>
+                          </HoverCardTrigger>
+                          <HoverCardContent align="start" className="w-80">
+                            <div className="mb-3 flex items-center justify-between gap-2">
+                              <p className="font-medium">{login}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {since ? `Since ${since}` : "All time"} · {org}
+                              </p>
+                            </div>
+                            <MemberRepoList
+                              data={reposByLogin.get(login)}
+                              isLoading={reposQuery.isLoading}
+                              isError={reposQuery.isError}
+                              selected={repos}
+                              onToggle={toggleRepoFilter}
                             />
-                          ) : (
-                            <UserAvatar username={login} className="size-6" />
-                          )}
-                          <span className="truncate">{login}</span>
-                          {isViewer && (
-                            <span className="text-xs text-muted-foreground">
-                              {viewerInGroup ? "(you)" : "(you, not in group)"}
-                            </span>
-                          )}
-                        </a>
+                          </HoverCardContent>
+                        </HoverCard>
                       </td>
                       {COLUMNS.map((c) => (
                         <td
