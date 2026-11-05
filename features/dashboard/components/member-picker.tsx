@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   Combobox,
   ComboboxChips,
@@ -80,7 +81,9 @@ export function MemberPicker({ onMemberDoubleClick }: MemberPickerProps) {
               onDoubleClick={() => onMemberDoubleClick?.(login)}
             >
               {member && (
-                <img
+                <Image
+                  width={16}
+                  height={16}
                   src={member.avatar_url}
                   alt=""
                   className="size-4 rounded-full"
@@ -107,7 +110,9 @@ export function MemberPicker({ onMemberDoubleClick }: MemberPickerProps) {
                 return (
                   <span key={login} className="flex items-center gap-1.5 text-xs">
                     {member && (
-                      <img
+                      <Image
+                        width={16}
+                        height={16}
                         src={member.avatar_url}
                         alt=""
                         className="size-4 rounded-full"
@@ -138,7 +143,9 @@ export function MemberPicker({ onMemberDoubleClick }: MemberPickerProps) {
             return (
               <ComboboxItem key={login} value={login}>
                 {member && (
-                  <img
+                  <Image
+                    width={20}
+                    height={20}
                     src={member.avatar_url}
                     alt=""
                     className="size-5 rounded-full"

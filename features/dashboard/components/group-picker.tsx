@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -318,7 +319,9 @@ export function GroupPicker() {
                         isSelected && "bg-accent/50",
                       )}
                     >
-                      <img
+                      <Image
+                        width={20}
+                        height={20}
                         src={member.avatar_url}
                         alt=""
                         className="size-5 rounded-full"
