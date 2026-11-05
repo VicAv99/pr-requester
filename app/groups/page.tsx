@@ -5,6 +5,7 @@ import { getAuthUser } from "@/lib/auth-cookies";
 import { DashboardHeader } from "@/features/dashboard/components/dashboard-header";
 import { GroupsManager } from "@/features/dashboard/components/groups-manager";
 import { UserMenu } from "@/features/auth/components/user-menu";
+import { TeamMembersSync } from "@/features/team-config/components/team-members-sync";
 
 export default async function GroupsPage() {
   const user = await getAuthUser();
@@ -15,6 +16,7 @@ export default async function GroupsPage() {
 
   return (
     <div className="bg-dot-grid min-h-screen">
+      <TeamMembersSync />
       <div className="dashboard-gradient">
         <div className="mx-auto max-w-6xl px-6 py-8">
           <DashboardHeader>

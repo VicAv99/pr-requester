@@ -4,12 +4,14 @@ import { UserMenu } from "@/features/auth/components/user-menu";
 import { DashboardStats } from "@/features/dashboard/components/dashboard-stats";
 import { PRTabList } from "@/features/dashboard/components/pr-tab-list";
 import { TeamConfigBanner } from "@/features/team-config/components/team-config-banner";
+import { TeamMembersSync } from "@/features/team-config/components/team-members-sync";
 
 export default async function Page() {
   const user = await getAuthUser();
 
   return (
     <div className="bg-dot-grid min-h-screen">
+      <TeamMembersSync />
       <div className="dashboard-gradient">
         <div className="mx-auto max-w-6xl px-6 py-8">
           <DashboardHeader>
