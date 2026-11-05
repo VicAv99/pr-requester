@@ -13,3 +13,8 @@ export type MemberStats = {
   /** Other people's PRs this member reviewed, updated in range */
   reviewed: number;
 };
+
+export type OrgRepo = {
+  name: string;
+  description: string | null;
+};

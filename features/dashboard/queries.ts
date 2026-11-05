@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { PullRequest } from "./types/dashboard";
-import type { MemberStats, StatsRange } from "./types/member-stats";
+import type { MemberStats, OrgRepo, StatsRange } from "./types/member-stats";
 
 export const dashboardQueries = {
   all: () => ["dashboard"],
@@ -46,13 +46,19 @@ export const dashboardQueries = {
       enabled: memberLogins.length > 0,
     }),
 
-  memberStats: (org: string, memberLogins: string[], range: StatsRange) =>
+  memberStats: (
+    org: string,
+    memberLogins: string[],
+    range: StatsRange,
+    repos: string[],
+  ) =>
     queryOptions({
       queryKey: [
         ...dashboardQueries.all(),
         "member-stats",
         org,
         range,
+        [...repos].sort((a, b) => a.localeCompare(b)),
         [...memberLogins].sort((a, b) => a.localeCompare(b)),
       ],
       queryFn: async (): Promise<MemberStats[]> => {
@@ -61,11 +67,25 @@ export const dashboardQueries = {
           range,
           members: memberLogins.join(","),
         });
+        if (repos.length > 0) params.set("repos", repos.join(","));
         const res = await fetch(`/api/github/member-stats?${params}`);
         if (!res.ok) throw new Error("Failed to fetch member stats");
         return res.json();
       },
       staleTime: 15 * 60 * 1000,
       enabled: org.length > 0 && memberLogins.length > 0,
+    }),
+
+  orgRepos: (org: string, search: string) =>
+    queryOptions({
+      queryKey: [...dashboardQueries.all(), "org-repos", org, search],
+      queryFn: async (): Promise<OrgRepo[]> => {
+        const params = new URLSearchParams({ org, q: search });
+        const res = await fetch(`/api/github/org-repos?${params}`);
+        if (!res.ok) throw new Error("Failed to fetch repositories");
+        return res.json();
+      },
+      staleTime: 10 * 60 * 1000,
+      enabled: org.length > 0,
     }),
 };

@@ -83,14 +83,6 @@ export function GroupsManager({ viewer }: GroupsManagerProps) {
       <section className="min-w-0 space-y-6">
         {showEditor ? (
           <>
-            {activeGroup && teamConfig && activeGroup.members.length > 0 && (
-              <GroupMemberStats
-                org={teamConfig.org}
-                logins={activeGroup.members}
-                viewerLogin={viewer.login}
-                membersByLogin={membersByLogin}
-              />
-            )}
             <GroupEditor
               key={activeGroup?.id ?? NEW_GROUP}
               group={activeGroup}
@@ -99,6 +91,14 @@ export function GroupsManager({ viewer }: GroupsManagerProps) {
               onCreated={(id) => setSelectedId(id)}
               onDeleted={() => setSelectedId(null)}
             />
+            {activeGroup && teamConfig && activeGroup.members.length > 0 && (
+              <GroupMemberStats
+                org={teamConfig.org}
+                logins={activeGroup.members}
+                viewerLogin={viewer.login}
+                membersByLogin={membersByLogin}
+              />
+            )}
           </>
         ) : (
           <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed py-16 text-center">

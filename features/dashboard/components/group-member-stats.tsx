@@ -1,9 +1,20 @@
 "use client";
 
+import type { PropsWithChildren } from "react";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
-import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { AlertCircleIcon } from "lucide-react";
+import {
+  parseAsArrayOf,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryState,
+} from "nuqs";
+import {
+  AlertCircleIcon,
+  ArrowDownIcon,
+  ArrowUpDownIcon,
+  ArrowUpIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Card,
@@ -20,6 +31,12 @@ import {
   type MemberStats,
   type StatsRange,
 } from "../types/member-stats";
+import {
+  buildStatSearch,
+  statsSinceDate,
+  type StatKey,
+} from "../utils/member-stats-search";
+import { RepoFilter } from "./repo-filter";
 import { UserAvatar } from "./user-avatar";
 
 const RANGE_LABELS: Record<StatsRange, string> = {
@@ -29,50 +46,50 @@ const RANGE_LABELS: Record<StatsRange, string> = {
   all: "All time",
 };
 
-const RANGE_DAYS: Record<Exclude<StatsRange, "all">, number> = {
-  "30d": 30,
-  "90d": 90,
-  "1y": 365,
-};
-
-type StatColumn = {
-  key: Exclude<keyof MemberStats, "login">;
-  label: string;
-  /** Builds the GitHub search that backs this count */
-  search: (login: string, org: string, since: string | null) => string;
-};
-
-const COLUMNS: StatColumn[] = [
-  {
-    key: "open",
-    label: "Open",
-    search: (l, o, s) =>
-      `is:pr org:${o} author:${l} is:open${s ? ` created:>=${s}` : ""}`,
-  },
-  {
-    key: "merged",
-    label: "Merged",
-    search: (l, o, s) =>
-      `is:pr org:${o} author:${l} is:merged${s ? ` merged:>=${s}` : ""}`,
-  },
-  {
-    key: "closed",
-    label: "Closed",
-    search: (l, o, s) =>
-      `is:pr org:${o} author:${l} is:closed is:unmerged${s ? ` closed:>=${s}` : ""}`,
-  },
-  {
-    key: "reviewed",
-    label: "Reviewed",
-    search: (l, o, s) =>
-      `is:pr org:${o} reviewed-by:${l} -author:${l}${s ? ` updated:>=${s}` : ""}`,
-  },
+const COLUMNS: { key: StatKey; label: string }[] = [
+  { key: "open", label: "Open" },
+  { key: "merged", label: "Merged" },
+  { key: "closed", label: "Closed" },
+  { key: "reviewed", label: "Reviewed" },
 ];
 
-function sinceDate(range: StatsRange): string | null {
-  if (range === "all") return null;
-  const date = new Date(Date.now() - RANGE_DAYS[range] * 24 * 60 * 60 * 1000);
-  return date.toISOString().slice(0, 10);
+const SORT_KEYS = ["member", "open", "merged", "closed", "reviewed", "rate"] as const;
+type SortKey = (typeof SORT_KEYS)[number];
+const SORT_DIRS = ["asc", "desc"] as const;
+type SortDir = (typeof SORT_DIRS)[number];
+
+/** Names read naturally A→Z; numbers are most useful highest-first */
+function firstDir(key: SortKey): SortDir {
+  return key === "member" ? "asc" : "desc";
+}
+
+function sortValue(key: SortKey, login: string, stats: MemberStats): number | string | null {
+  if (key === "member") return login.toLowerCase();
+  if (key === "rate") return mergeRate(stats);
+  return stats[key];
+}
+
+function sortLogins(
+  logins: string[],
+  statsByLogin: Map<string, MemberStats>,
+  key: SortKey,
+  dir: SortDir,
+): string[] {
+  const sign = dir === "asc" ? 1 : -1;
+  return [...logins].sort((a, b) => {
+    const sa = statsByLogin.get(a);
+    const sb = statsByLogin.get(b);
+    // Rows still loading keep their place
+    if (!sa || !sb) return 0;
+    const va = sortValue(key, a, sa);
+    const vb = sortValue(key, b, sb);
+    // No merge rate (nothing finished) always sorts last
+    if (va === null || vb === null) return va === vb ? 0 : va === null ? 1 : -1;
+    if (typeof va === "string" && typeof vb === "string") {
+      return sign * va.localeCompare(vb);
+    }
+    return sign * ((va as number) - (vb as number));
+  });
 }
 
 function searchUrl(query: string): string {
@@ -102,10 +119,22 @@ export function GroupMemberStats({
     "range",
     parseAsStringLiteral(STATS_RANGES).withDefault("90d"),
   );
+  const [repos, setRepos] = useQueryState(
+    "repos",
+    parseAsArrayOf(parseAsString).withDefault([]),
+  );
+  const [sortKey, setSortKey] = useQueryState(
+    "sort",
+    parseAsStringLiteral(SORT_KEYS),
+  );
+  const [sortDir, setSortDir] = useQueryState(
+    "dir",
+    parseAsStringLiteral(SORT_DIRS),
+  );
   const viewerInGroup = logins.includes(viewerLogin);
   const rowLogins = [viewerLogin, ...logins.filter((l) => l !== viewerLogin)];
-  const query = useQuery(dashboardQueries.memberStats(org, rowLogins, range));
-  const since = sinceDate(range);
+  const query = useQuery(dashboardQueries.memberStats(org, rowLogins, range, repos));
+  const since = statsSinceDate(range);
 
   const statsByLogin = new Map(query.data?.map((s) => [s.login, s]));
   const groupStats = query.data?.filter((s) => logins.includes(s.login));
@@ -119,6 +148,32 @@ export function GroupMemberStats({
     }),
     { login: "", open: 0, merged: 0, closed: 0, reviewed: 0 },
   );
+  // You sort alongside the group so you can see where you rank
+  const sortedLogins = sortKey
+    ? sortLogins(rowLogins, statsByLogin, sortKey, sortDir ?? firstDir(sortKey))
+    : rowLogins;
+
+  function cycleSort(key: SortKey) {
+    const dir = sortDir ?? (sortKey ? firstDir(sortKey) : null);
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir(firstDir(key));
+    } else if (dir === firstDir(key)) {
+      setSortDir(firstDir(key) === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(null);
+      setSortDir(null);
+    }
+  }
+
+  function headerProps(key: SortKey) {
+    return {
+      active: sortKey === key,
+      dir: sortKey === key ? (sortDir ?? firstDir(key)) : null,
+      onClick: () => cycleSort(key),
+    };
+  }
+
   const maxFinished = Math.max(
     1,
     ...(query.data?.map((s) => s.merged + s.closed) ?? []),
@@ -129,7 +184,10 @@ export function GroupMemberStats({
       <CardHeader>
         <CardTitle>Member activity</CardTitle>
         <CardDescription>
-          Pull requests in {org}
+          Pull requests in{" "}
+          {repos.length === 0
+            ? org
+            : `${repos.length} repo${repos.length !== 1 ? "s" : ""}`}
           {since ? ` since ${since}` : ""}. Click a number to see the PRs on
           GitHub.
         </CardDescription>
@@ -158,7 +216,12 @@ export function GroupMemberStats({
         </CardAction>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="space-y-4">
+        <RepoFilter
+          org={org}
+          value={repos}
+          onChange={(next) => setRepos(next.length > 0 ? next : null)}
+        />
         {query.isError ? (
           <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
             <AlertCircleIcon className="size-4" />
@@ -176,19 +239,32 @@ export function GroupMemberStats({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-xs text-muted-foreground">
-                  <th className="py-2 pr-3 text-left font-medium">Member</th>
+                  <SortHeader
+                    {...headerProps("member")}
+                    className="pr-3 text-left"
+                  >
+                    Member
+                  </SortHeader>
                   {COLUMNS.map((c) => (
-                    <th key={c.key} className="px-3 py-2 text-right font-medium">
+                    <SortHeader
+                      key={c.key}
+                      {...headerProps(c.key)}
+                      align="right"
+                      className="px-3"
+                    >
                       {c.label}
-                    </th>
+                    </SortHeader>
                   ))}
-                  <th className="py-2 pl-3 text-left font-medium">
+                  <SortHeader
+                    {...headerProps("rate")}
+                    className="pl-3 text-left"
+                  >
                     Merge rate
-                  </th>
+                  </SortHeader>
                 </tr>
               </thead>
               <tbody>
-                {rowLogins.map((login) => {
+                {sortedLogins.map((login) => {
                   const member = membersByLogin.get(login);
                   const stats = statsByLogin.get(login);
                   const isViewer = login === viewerLogin;
@@ -234,7 +310,15 @@ export function GroupMemberStats({
                         >
                           {stats ? (
                             <a
-                              href={searchUrl(c.search(login, org, since))}
+                              href={searchUrl(
+                                buildStatSearch({
+                                  key: c.key,
+                                  login,
+                                  org,
+                                  repos,
+                                  since,
+                                }),
+                              )}
                               target="_blank"
                               rel="noreferrer"
                               className={cn(
@@ -313,5 +397,41 @@ function MergeRateBar({ stats, max }: { stats: MemberStats; max: number }) {
         {formatRate(rate)}
       </span>
     </div>
+  );
+}
+
+function SortHeader({
+  active,
+  dir,
+  onClick,
+  align = "left",
+  className,
+  children,
+}: PropsWithChildren<{
+  active: boolean;
+  dir: SortDir | null;
+  onClick: () => void;
+  align?: "left" | "right";
+  className?: string;
+}>) {
+  const Icon = !active ? ArrowUpDownIcon : dir === "asc" ? ArrowUpIcon : ArrowDownIcon;
+  return (
+    <th
+      aria-sort={!active ? "none" : dir === "asc" ? "ascending" : "descending"}
+      className={cn("py-2 font-medium", align === "right" && "text-right", className)}
+    >
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "inline-flex items-center gap-1 transition-colors hover:text-foreground",
+          align === "right" && "flex-row-reverse",
+          active && "text-foreground",
+        )}
+      >
+        {children}
+        <Icon className={cn("size-3", !active && "opacity-40")} />
+      </button>
+    </th>
   );
 }

@@ -6,55 +6,36 @@ import {
   type MemberStats,
   type StatsRange,
 } from "@/features/dashboard/types/member-stats";
+import {
+  STAT_KEYS,
+  buildStatSearch,
+  statsSinceDate,
+} from "@/features/dashboard/utils/member-stats-search";
 
 // GitHub logins and org names: alphanumerics and single hyphens (bots add [bot])
 const GITHUB_NAME = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})(?:\[bot\])?$/;
+const REPO_NAME = /^[A-Za-z0-9._-]{1,100}$/;
 const MAX_MEMBERS = 50;
+const MAX_REPOS = 10;
 // Each member needs 4 searches; keep each GraphQL request to a modest size
 const MEMBERS_PER_REQUEST = 10;
-
-const STAT_KEYS = ["open", "merged", "closed", "reviewed"] as const;
-type StatKey = (typeof STAT_KEYS)[number];
-
-const RANGE_DAYS: Record<Exclude<StatsRange, "all">, number> = {
-  "30d": 30,
-  "90d": 90,
-  "1y": 365,
-};
-
-function sinceDate(range: StatsRange): string | null {
-  if (range === "all") return null;
-  const date = new Date(Date.now() - RANGE_DAYS[range] * 24 * 60 * 60 * 1000);
-  return date.toISOString().slice(0, 10);
-}
-
-function buildSearch(
-  key: StatKey,
-  login: string,
-  org: string,
-  since: string | null,
-): string {
-  const scope = `is:pr org:${org}`;
-  switch (key) {
-    case "open":
-      return `${scope} author:${login} is:open${since ? ` created:>=${since}` : ""}`;
-    case "merged":
-      return `${scope} author:${login} is:merged${since ? ` merged:>=${since}` : ""}`;
-    case "closed":
-      return `${scope} author:${login} is:closed is:unmerged${since ? ` closed:>=${since}` : ""}`;
-    case "reviewed":
-      return `${scope} reviewed-by:${login} -author:${login}${since ? ` updated:>=${since}` : ""}`;
-  }
-}
 
 type GraphQLResponse = {
   data?: Record<string, { issueCount: number }>;
   errors?: { message: string }[];
 };
 
+function splitParam(value: string | null): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
 async function fetchStatsChunk(
   logins: string[],
   org: string,
+  repos: string[],
   since: string | null,
   token: string,
 ): Promise<MemberStats[]> {
@@ -65,7 +46,7 @@ async function fetchStatsChunk(
   logins.forEach((login, i) => {
     for (const key of STAT_KEYS) {
       const name = `${key}${i}`;
-      variables[name] = buildSearch(key, login, org, since);
+      variables[name] = buildStatSearch({ key, login, org, repos, since });
       declarations.push(`$${name}: String!`);
       fields.push(
         `${name}: search(type: ISSUE, query: $${name}, first: 0) { issueCount }`,
@@ -109,10 +90,8 @@ export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const org = params.get("org") ?? "";
   const rangeParam = params.get("range") ?? "90d";
-  const logins = (params.get("members") ?? "")
-    .split(",")
-    .map((m) => m.trim())
-    .filter(Boolean);
+  const logins = splitParam(params.get("members"));
+  const repos = splitParam(params.get("repos"));
 
   if (!GITHUB_NAME.test(org)) {
     return NextResponse.json({ error: "Invalid 'org'" }, { status: 400 });
@@ -122,6 +101,9 @@ export async function GET(request: NextRequest) {
   }
   if (logins.length > MAX_MEMBERS || !logins.every((l) => GITHUB_NAME.test(l))) {
     return NextResponse.json({ error: "Invalid 'members'" }, { status: 400 });
+  }
+  if (repos.length > MAX_REPOS || !repos.every((r) => REPO_NAME.test(r))) {
+    return NextResponse.json({ error: "Invalid 'repos'" }, { status: 400 });
   }
   if (logins.length === 0) {
     return NextResponse.json([]);
@@ -135,14 +117,16 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const since = sinceDate(rangeParam as StatsRange);
+  const since = statsSinceDate(rangeParam as StatsRange);
   const chunks: string[][] = [];
   for (let i = 0; i < logins.length; i += MEMBERS_PER_REQUEST) {
     chunks.push(logins.slice(i, i + MEMBERS_PER_REQUEST));
   }
 
   const { data: results, error } = await tryCatch(
-    Promise.all(chunks.map((chunk) => fetchStatsChunk(chunk, org, since, token))),
+    Promise.all(
+      chunks.map((chunk) => fetchStatsChunk(chunk, org, repos, since, token)),
+    ),
   );
   if (error) {
     console.error("Failed to fetch member stats:", error);
