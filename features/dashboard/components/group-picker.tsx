@@ -401,18 +401,14 @@ function GroupRow({
     setEditing(false);
   }
 
-  function handleDelete() {
-    deleteMemberGroup(group.id);
-    onClose();
-  }
-
   const startDeleteHold = useCallback(() => {
     setHoldingDelete(true);
     deleteTimerRef.current = setTimeout(() => {
       setHoldingDelete(false);
-      handleDelete();
+      deleteMemberGroup(group.id);
+      onClose();
     }, HOLD_DURATION);
-  }, [group.id]);
+  }, [group.id, onClose]);
 
   const cancelDeleteHold = useCallback(() => {
     setHoldingDelete(false);
