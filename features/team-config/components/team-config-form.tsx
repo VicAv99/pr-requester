@@ -181,7 +181,7 @@ export function TeamConfigForm() {
             <code className="text-xs">read:org</code> scopes.
           </FieldDescription>
           {patSaved ? (
-            <div className="flex h-9 items-center justify-between gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 text-sm text-emerald-600 dark:text-emerald-400">
+            <div className="flex h-9 items-center justify-between gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 text-sm text-emerald-700 dark:text-emerald-400">
               <span className="flex items-center gap-2">
                 <CheckIcon className="size-4" />
                 Token saved.

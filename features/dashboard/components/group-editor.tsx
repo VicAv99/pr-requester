@@ -144,7 +144,7 @@ export function GroupEditor({
                     key={login}
                     className={cn(
                       "border border-border bg-background",
-                      !member && "opacity-60",
+                      !member && "text-muted-foreground",
                     )}
                   >
                     <MemberAvatar login={login} member={member} size={16} />

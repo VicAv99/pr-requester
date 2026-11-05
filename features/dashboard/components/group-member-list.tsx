@@ -35,11 +35,11 @@ export function GroupMemberList({
             ) : (
               <UserAvatar username={login} className="size-5" />
             )}
-            <span className={cn("truncate", !member && "opacity-60")}>
+            <span className={cn("truncate", !member && "opacity-80")}>
               {login}
             </span>
             {!member && (
-              <span className="text-[0.7em] opacity-60">(not in team)</span>
+              <span className="text-[0.85em] opacity-80">(not in team)</span>
             )}
           </li>
         );

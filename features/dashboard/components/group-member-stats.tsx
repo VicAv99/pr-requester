@@ -206,7 +206,7 @@ export function GroupMemberStats({
                 onClick={() => setRange(r)}
                 className={cn(
                   "rounded px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground",
-                  range === r && "bg-accent font-medium text-foreground",
+                  range === r && "bg-muted font-medium text-foreground",
                 )}
               >
                 {RANGE_LABELS[r]}
@@ -273,7 +273,7 @@ export function GroupMemberStats({
                       key={login}
                       className={cn(
                         "border-b last:border-0",
-                        isViewer && "bg-accent/40",
+                        isViewer && "bg-muted/60",
                         isViewer && !viewerInGroup && "border-dashed",
                       )}
                     >
@@ -387,10 +387,10 @@ function MergeRateBar({ stats, max }: { stats: MemberStats; max: number }) {
           style={{ width: `${(finished / max) * 100}%` }}
         >
           <div
-            className="h-full bg-emerald-500"
+            className="h-full bg-status-approved"
             style={{ width: `${(rate ?? 0) * 100}%` }}
           />
-          <div className="h-full flex-1 bg-rose-400" />
+          <div className="h-full flex-1 bg-status-changes-requested" />
         </div>
       </div>
       <span className="w-9 text-xs text-muted-foreground tabular-nums">
@@ -430,7 +430,7 @@ function SortHeader({
         )}
       >
         {children}
-        <Icon className={cn("size-3", !active && "opacity-40")} />
+        <Icon className="size-3" />
       </button>
     </th>
   );

@@ -32,10 +32,10 @@ const STATUS_ICON: Record<PRDiffFile["status"], typeof FileIcon> = {
 const STATUS_COLOR: Record<PRDiffFile["status"], string> = {
   added: "text-status-approved",
   removed: "text-status-changes-requested",
-  modified: "text-amber-500",
-  renamed: "text-blue-500",
-  copied: "text-blue-500",
-  changed: "text-amber-500",
+  modified: "text-amber-700 dark:text-amber-400",
+  renamed: "text-blue-700 dark:text-blue-400",
+  copied: "text-blue-700 dark:text-blue-400",
+  changed: "text-amber-700 dark:text-amber-400",
   unchanged: "text-muted-foreground",
 };
 

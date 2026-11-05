@@ -62,8 +62,8 @@ export function GroupsManager({ viewer }: GroupsManagerProps) {
                 onClick={() => setSelectedId(group.id)}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent",
-                  isActive && "bg-accent font-medium",
+                  "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted",
+                  isActive && "bg-muted font-medium",
                 )}
               >
                 <FolderIcon className="size-3.5 text-muted-foreground" />

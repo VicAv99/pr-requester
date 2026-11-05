@@ -78,7 +78,7 @@ export function PRCard({ pr, onAuthorClick, viewerLogin }: PRCardProps) {
         "hover:-translate-y-0.5 hover:border-border hover:shadow-lg hover:shadow-black/20",
         "border-l-[3px]",
         pr.isDraft ? "border-l-status-draft" : STATUS_BORDER[pr.reviewStatus],
-        viewerApproved && "opacity-60",
+        viewerApproved && "bg-muted/60 hover:shadow-none",
       )}
     >
       {/* Title row */}

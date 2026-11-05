@@ -19,7 +19,7 @@ export function UserAvatar({ username, className }: UserAvatarProps) {
         "flex items-center justify-center rounded-full text-[0.6em] font-semibold leading-none text-white",
         className
       )}
-      style={{ backgroundColor: `oklch(0.62 0.16 ${hue})` }}
+      style={{ backgroundColor: `oklch(0.5 0.16 ${hue})` }}
       title={username}
     >
       {initial}

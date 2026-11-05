@@ -105,7 +105,11 @@ export function GroupPicker() {
                       onSelect={() => applyGroup(group.members)}
                     >
                       <span className="flex-1 truncate">{group.name}</span>
-                      <Badge variant="secondary" className="ml-auto">
+                      {/* Highlighted items force accent-foreground text; invert the badge to match */}
+                      <Badge
+                        variant="secondary"
+                        className="ml-auto group-focus/dropdown-menu-item:bg-accent-foreground group-focus/dropdown-menu-item:text-accent!"
+                      >
                         {group.members.length}
                       </Badge>
                     </DropdownMenuItem>
