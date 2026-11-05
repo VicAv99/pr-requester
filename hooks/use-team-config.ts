@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import type { TeamConfig } from "@/types/team-config";
 
 const STORAGE_KEY = "requester-team-config";
@@ -30,8 +30,7 @@ function subscribe(callback: () => void): () => void {
   };
 }
 
-export function useTeamConfig(): TeamConfig | null {
-  const raw = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+function parseTeamConfig(raw: string | null): TeamConfig | null {
   if (!raw) return null;
 
   try {
@@ -39,4 +38,10 @@ export function useTeamConfig(): TeamConfig | null {
   } catch {
     return null;
   }
+}
+
+// Same stored string → same object, so consumers can rely on reference equality
+export function useTeamConfig(): TeamConfig | null {
+  const raw = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  return useMemo(() => parseTeamConfig(raw), [raw]);
 }
