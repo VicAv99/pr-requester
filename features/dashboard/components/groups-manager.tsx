@@ -10,6 +10,7 @@ import type { TeamMember } from "@/types/team-config";
 import { useMemberGroups } from "../hooks/use-member-groups";
 import { getUniqueMembers } from "../utils/get-unique-members";
 import { GroupEditor } from "./group-editor";
+import { GroupMemberStats } from "./group-member-stats";
 
 const NEW_GROUP = "new";
 
@@ -25,6 +26,7 @@ export function GroupsManager({ viewer }: GroupsManagerProps) {
     viewer,
     ...getUniqueMembers(teamConfig).filter((m) => m.login !== viewer.login),
   ];
+  const membersByLogin = new Map(allMembers.map((m) => [m.login, m]));
   const [selectedId, setSelectedId] = useQueryState(
     "group",
     parseAsString.withDefault(""),
@@ -81,6 +83,14 @@ export function GroupsManager({ viewer }: GroupsManagerProps) {
       <section className="min-w-0 space-y-6">
         {showEditor ? (
           <>
+            {activeGroup && teamConfig && activeGroup.members.length > 0 && (
+              <GroupMemberStats
+                org={teamConfig.org}
+                logins={activeGroup.members}
+                viewerLogin={viewer.login}
+                membersByLogin={membersByLogin}
+              />
+            )}
             <GroupEditor
               key={activeGroup?.id ?? NEW_GROUP}
               group={activeGroup}

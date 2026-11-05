@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { PullRequest } from "./types/dashboard";
+import type { MemberStats, StatsRange } from "./types/member-stats";
 
 export const dashboardQueries = {
   all: () => ["dashboard"],
@@ -43,5 +44,28 @@ export const dashboardQueries = {
       },
       staleTime: 5 * 60 * 1000,
       enabled: memberLogins.length > 0,
+    }),
+
+  memberStats: (org: string, memberLogins: string[], range: StatsRange) =>
+    queryOptions({
+      queryKey: [
+        ...dashboardQueries.all(),
+        "member-stats",
+        org,
+        range,
+        [...memberLogins].sort((a, b) => a.localeCompare(b)),
+      ],
+      queryFn: async (): Promise<MemberStats[]> => {
+        const params = new URLSearchParams({
+          org,
+          range,
+          members: memberLogins.join(","),
+        });
+        const res = await fetch(`/api/github/member-stats?${params}`);
+        if (!res.ok) throw new Error("Failed to fetch member stats");
+        return res.json();
+      },
+      staleTime: 15 * 60 * 1000,
+      enabled: org.length > 0 && memberLogins.length > 0,
     }),
 };
