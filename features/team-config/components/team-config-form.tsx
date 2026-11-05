@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { CheckIcon, KeyIcon, Loader2Icon } from "lucide-react";
@@ -19,10 +19,8 @@ import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { OrgSelect } from "@/features/team-config/components/org-select";
 import { TeamSelect } from "@/features/team-config/components/team-select";
 import { teamConfigQueries } from "@/features/team-config/queries";
-import {
-  getTeamConfig,
-  setTeamConfig,
-} from "@/features/team-config/utils/team-config-storage";
+import { setTeamConfig } from "@/features/team-config/utils/team-config-storage";
+import { useTeamConfig } from "@/hooks/use-team-config";
 import type {
   GitHubOrg,
   TeamConfig,
@@ -38,21 +36,28 @@ export function TeamConfigForm() {
   const [patSaving, setPatSaving] = useState(false);
   const [patError, setPatError] = useState<string | null>(null);
 
-  const [selectedOrg, setSelectedOrg] = useState<GitHubOrg | null>(null);
-  const [selectedTeamSlugs, setSelectedTeamSlugs] = useState<string[]>([]);
+  // Saved config is the default; drafts are `undefined` until the user edits
+  const savedConfig = useTeamConfig();
+  const [orgDraft, setOrgDraft] = useState<GitHubOrg | null | undefined>();
+  const [teamSlugsDraft, setTeamSlugsDraft] = useState<string[] | undefined>();
 
-  // Hydrate from localStorage + check if PAT is already stored
+  const selectedOrg = useMemo<GitHubOrg | null>(() => {
+    if (orgDraft !== undefined) return orgDraft;
+    if (!savedConfig) return null;
+    return {
+      login: savedConfig.org,
+      avatar_url: savedConfig.orgAvatarUrl,
+      description: null,
+    };
+  }, [orgDraft, savedConfig]);
+
+  const selectedTeamSlugs = useMemo(
+    () => teamSlugsDraft ?? savedConfig?.teams.map((t) => t.slug) ?? [],
+    [teamSlugsDraft, savedConfig],
+  );
+
+  // Check if PAT is already stored
   useEffect(() => {
-    const existing = getTeamConfig();
-    if (existing) {
-      setSelectedOrg({
-        login: existing.org,
-        avatar_url: existing.orgAvatarUrl,
-        description: null,
-      });
-      setSelectedTeamSlugs(existing.teams.map((t) => t.slug));
-    }
-
     fetch("/api/github/orgs").then((res) => {
       if (res.ok) setPatSaved(true);
     });
@@ -106,8 +111,8 @@ export function TeamConfigForm() {
   }, [pat, queryClient]);
 
   const handleOrgChange = useCallback((org: GitHubOrg | null) => {
-    setSelectedOrg(org);
-    setSelectedTeamSlugs([]);
+    setOrgDraft(org);
+    setTeamSlugsDraft([]);
   }, []);
 
   const handleSave = useCallback(async () => {
@@ -233,7 +238,7 @@ export function TeamConfigForm() {
             <TeamSelect
               org={selectedOrg?.login ?? null}
               value={selectedTeamSlugs}
-              onValueChange={setSelectedTeamSlugs}
+              onValueChange={setTeamSlugsDraft}
             />
           </>
         )}
