@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2Icon, UsersIcon } from "lucide-react";
+import { ExternalLinkIcon, Loader2Icon, UsersIcon } from "lucide-react";
 import {
   Combobox,
   ComboboxChips,
@@ -77,7 +77,19 @@ export function TeamSelect({
               const team = teamMap.get(slug);
               return (
                 <ComboboxChip key={slug}>
-                  {team?.name ?? slug}
+                  <a
+                    href={`https://github.com/orgs/${encodeURIComponent(org)}/teams/${encodeURIComponent(slug)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={`Open ${team?.name ?? slug} on GitHub`}
+                    className="group/team-link inline-flex items-center gap-1 underline-offset-2 hover:underline"
+                    // Keep clicks on the link from opening the team dropdown
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    {team?.name ?? slug}
+                    <ExternalLinkIcon className="size-3 text-muted-foreground group-hover/team-link:text-foreground" />
+                  </a>
                 </ComboboxChip>
               );
             })}
