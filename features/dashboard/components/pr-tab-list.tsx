@@ -1,7 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useQueryState, parseAsString, parseAsStringLiteral } from "nuqs";
+import {
+  useQueryState,
+  parseAsArrayOf,
+  parseAsString,
+  parseAsStringLiteral,
+} from "nuqs";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +27,7 @@ import { PRCardSkeleton } from "./pr-card-skeleton";
 import { PREmptyState } from "./pr-empty-state";
 import { MemberPicker } from "./member-picker";
 import { GroupPicker } from "./group-picker";
+import { TeamRepoFilter, type RepoCount } from "./team-repo-filter";
 import { UserAvatar } from "./user-avatar";
 import { dashboardQueries } from "../queries";
 import { useSelectedMembers } from "../hooks/use-selected-members";
@@ -81,6 +87,10 @@ export function PRTabList() {
       "updated",
     ),
   );
+  const [repoFilter, setRepoFilter] = useQueryState(
+    "repo",
+    parseAsArrayOf(parseAsString).withDefault([]),
+  );
   const selectedMembers = useSelectedMembers();
 
   const viewerQuery = useQuery(dashboardQueries.viewer());
@@ -96,11 +106,31 @@ export function PRTabList() {
     }
   }
 
-  function applyFilter(prs: PullRequest[]): PullRequest[] {
+  // Filters shared by both tabs; the repo picker is narrowed by these
+  function applyBaseFilter(prs: PullRequest[]): PullRequest[] {
     let filtered = prs;
     if (prFilter === "open") filtered = filtered.filter(isOpenForReview);
     if (authorFilter) filtered = filtered.filter((pr) => pr.author === authorFilter);
+    return filtered;
+  }
+
+  function applyFilter(tabId: DashboardTab, prs: PullRequest[]): PullRequest[] {
+    let filtered = applyBaseFilter(prs);
+    // The repo picker only shows on the team tab
+    if (tabId === "team-prs" && repoFilter.length > 0) {
+      filtered = filtered.filter((pr) => repoFilter.includes(pr.repo));
+    }
     return applySort(filtered);
+  }
+
+  function getRepoCounts(prs: PullRequest[]): RepoCount[] {
+    const counts = new Map<string, number>();
+    for (const pr of applyBaseFilter(prs)) {
+      counts.set(pr.repo, (counts.get(pr.repo) ?? 0) + 1);
+    }
+    return [...counts]
+      .map(([repo, count]) => ({ repo, count }))
+      .sort((a, b) => b.count - a.count || a.repo.localeCompare(b.repo));
   }
 
   function applySort(prs: PullRequest[]): PullRequest[] {
@@ -132,10 +162,10 @@ export function PRTabList() {
     switch (tabId) {
       case "assigned":
         if (assignedQuery.isLoading) return undefined;
-        return applyFilter(assignedQuery.data ?? []).length;
+        return applyFilter(tabId, assignedQuery.data ?? []).length;
       case "team-prs":
         if (teamPrsQuery.isLoading) return undefined;
-        return applyFilter(teamPrsQuery.data ?? []).length;
+        return applyFilter(tabId, teamPrsQuery.data ?? []).length;
     }
   }
 
@@ -143,7 +173,7 @@ export function PRTabList() {
     (activeTab === "assigned" && assignedQuery.isLoading) ||
     (activeTab === "team-prs" && teamPrsQuery.isLoading);
 
-  const currentData = applyFilter(getTabData(activeTab));
+  const currentData = applyFilter(activeTab, getTabData(activeTab));
 
   const activeTimestamp =
     activeTab === "assigned"
@@ -238,7 +268,14 @@ export function PRTabList() {
 
       {activeTab === "team-prs" && (
         <div className="mt-4 space-y-3">
-          <GroupPicker />
+          <div className="flex flex-wrap items-center gap-2">
+            <TeamRepoFilter
+              repos={getRepoCounts(teamPrsQuery.data ?? [])}
+              value={repoFilter}
+              onChange={setRepoFilter}
+            />
+            <GroupPicker />
+          </div>
           <MemberPicker onMemberDoubleClick={setAuthorFilter} />
         </div>
       )}
