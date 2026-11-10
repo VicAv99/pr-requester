@@ -1,6 +1,6 @@
 "use client";
 
-import type { PropsWithChildren } from "react";
+import { Fragment, useState, type PropsWithChildren } from "react";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -14,6 +14,7 @@ import {
   ArrowDownIcon,
   ArrowUpDownIcon,
   ArrowUpIcon,
+  ChevronRightIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -38,10 +39,13 @@ import {
 } from "../types/member-stats";
 import {
   buildStatSearch,
+  githubSearchUrl,
   statsSinceDate,
   type StatKey,
 } from "../utils/member-stats-search";
+import { formatRate, mergeRate, MergeRateBar } from "./merge-rate-bar";
 import { MemberRepoList } from "./member-repo-list";
+import { MemberRepoRows } from "./member-repo-rows";
 import { RepoFilter } from "./repo-filter";
 import { UserAvatar } from "./user-avatar";
 
@@ -98,15 +102,6 @@ function sortLogins(
   });
 }
 
-function searchUrl(query: string): string {
-  return `https://github.com/search?type=pullrequests&q=${encodeURIComponent(query)}`;
-}
-
-function mergeRate(stats: MemberStats): number | null {
-  const finished = stats.merged + stats.closed;
-  return finished === 0 ? null : stats.merged / finished;
-}
-
 type GroupMemberStatsProps = {
   org: string;
   logins: string[];
@@ -143,6 +138,16 @@ export function GroupMemberStats({
   const reposQuery = useQuery(dashboardQueries.memberRepos(org, rowLogins, range));
   const since = statsSinceDate(range);
   const reposByLogin = new Map(reposQuery.data?.map((r) => [r.login, r]));
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+
+  function toggleExpanded(login: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(login)) next.delete(login);
+      else next.add(login);
+      return next;
+    });
+  }
 
   function toggleRepoFilter(repo: string) {
     const next = repos.includes(repo)
@@ -283,98 +288,130 @@ export function GroupMemberStats({
                   const member = membersByLogin.get(login);
                   const stats = statsByLogin.get(login);
                   const isViewer = login === viewerLogin;
+                  const isExpanded = expanded.has(login);
                   return (
-                    <tr
-                      key={login}
-                      className={cn(
-                        "border-b last:border-0",
-                        isViewer && "bg-muted/60",
-                        isViewer && !viewerInGroup && "border-dashed",
-                      )}
-                    >
-                      <td className="py-2 pr-3">
-                        <HoverCard openDelay={250} closeDelay={100}>
-                          <HoverCardTrigger asChild>
-                            <a
-                              href={`https://github.com/${login}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-2 hover:underline"
+                    <Fragment key={login}>
+                      <tr
+                        className={cn(
+                          "border-b last:border-0",
+                          isViewer && "bg-muted/60",
+                          isViewer && !viewerInGroup && "border-dashed",
+                        )}
+                      >
+                        <td className="py-2 pr-3">
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => toggleExpanded(login)}
+                              aria-expanded={isExpanded}
+                              aria-label={`${isExpanded ? "Hide" : "Show"} ${login}'s repos`}
+                              className="-ml-1 rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                             >
-                              {member ? (
-                                <Image
-                                  width={24}
-                                  height={24}
-                                  src={member.avatar_url}
-                                  alt=""
-                                  className="size-6 rounded-full"
+                              <ChevronRightIcon
+                                className={cn(
+                                  "size-4 transition-transform",
+                                  isExpanded && "rotate-90",
+                                )}
+                              />
+                            </button>
+                            <HoverCard openDelay={250} closeDelay={100}>
+                              <HoverCardTrigger asChild>
+                                <a
+                                  href={`https://github.com/${login}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-2 hover:underline"
+                                >
+                                  {member ? (
+                                    <Image
+                                      width={24}
+                                      height={24}
+                                      src={member.avatar_url}
+                                      alt=""
+                                      className="size-6 rounded-full"
+                                    />
+                                  ) : (
+                                    <UserAvatar username={login} className="size-6" />
+                                  )}
+                                  <span className="truncate">{login}</span>
+                                  {isViewer && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {viewerInGroup ? "(you)" : "(you, not in group)"}
+                                    </span>
+                                  )}
+                                </a>
+                              </HoverCardTrigger>
+                              <HoverCardContent align="start" className="w-80">
+                                <div className="mb-3 flex items-center justify-between gap-2">
+                                  <p className="font-medium">{login}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {since ? `Since ${since}` : "All time"} · {org}
+                                  </p>
+                                </div>
+                                <MemberRepoList
+                                  data={reposByLogin.get(login)}
+                                  isLoading={reposQuery.isLoading}
+                                  isError={reposQuery.isError}
+                                  selected={repos}
+                                  onToggle={toggleRepoFilter}
                                 />
-                              ) : (
-                                <UserAvatar username={login} className="size-6" />
-                              )}
-                              <span className="truncate">{login}</span>
-                              {isViewer && (
-                                <span className="text-xs text-muted-foreground">
-                                  {viewerInGroup ? "(you)" : "(you, not in group)"}
-                                </span>
-                              )}
-                            </a>
-                          </HoverCardTrigger>
-                          <HoverCardContent align="start" className="w-80">
-                            <div className="mb-3 flex items-center justify-between gap-2">
-                              <p className="font-medium">{login}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {since ? `Since ${since}` : "All time"} · {org}
-                              </p>
-                            </div>
-                            <MemberRepoList
-                              data={reposByLogin.get(login)}
-                              isLoading={reposQuery.isLoading}
-                              isError={reposQuery.isError}
-                              selected={repos}
-                              onToggle={toggleRepoFilter}
-                            />
-                          </HoverCardContent>
-                        </HoverCard>
-                      </td>
-                      {COLUMNS.map((c) => (
-                        <td
-                          key={c.key}
-                          className="px-3 py-2 text-right tabular-nums"
-                        >
+                              </HoverCardContent>
+                            </HoverCard>
+                          </div>
+                        </td>
+                        {COLUMNS.map((c) => (
+                          <td
+                            key={c.key}
+                            className="px-3 py-2 text-right tabular-nums"
+                          >
+                            {stats ? (
+                              <a
+                                href={githubSearchUrl(
+                                  buildStatSearch({
+                                    key: c.key,
+                                    login,
+                                    org,
+                                    repos,
+                                    since,
+                                  }),
+                                )}
+                                target="_blank"
+                                rel="noreferrer"
+                                className={cn(
+                                  "hover:underline",
+                                  stats[c.key] === 0 && "text-muted-foreground",
+                                )}
+                              >
+                                {stats[c.key]}
+                              </a>
+                            ) : (
+                              <span className="ml-auto inline-block h-4 w-6 animate-pulse rounded bg-muted" />
+                            )}
+                          </td>
+                        ))}
+                        <td className="py-2 pl-3">
                           {stats ? (
-                            <a
-                              href={searchUrl(
-                                buildStatSearch({
-                                  key: c.key,
-                                  login,
-                                  org,
-                                  repos,
-                                  since,
-                                }),
-                              )}
-                              target="_blank"
-                              rel="noreferrer"
-                              className={cn(
-                                "hover:underline",
-                                stats[c.key] === 0 && "text-muted-foreground",
-                              )}
-                            >
-                              {stats[c.key]}
-                            </a>
+                            <MergeRateBar stats={stats} max={maxFinished} />
                           ) : (
-                            <span className="ml-auto inline-block h-4 w-6 animate-pulse rounded bg-muted" />
+                            <span className="inline-block h-2 w-24 animate-pulse rounded bg-muted" />
                           )}
                         </td>
-                      ))}
-                      <td className="py-2 pl-3">
-                        {stats ? (
-                          <MergeRateBar stats={stats} max={maxFinished} />
-                        ) : (
-                          <span className="inline-block h-2 w-24 animate-pulse rounded bg-muted" />
-                        )}
-                      </td>
-                    </tr>
+                      </tr>
+                      {isExpanded && (
+                        <MemberRepoRows
+                          org={org}
+                          login={login}
+                          range={range}
+                          since={since}
+                          filterRepos={repos}
+                          memberRepos={reposByLogin.get(login)}
+                          memberReposLoading={reposQuery.isLoading}
+                          memberReposError={reposQuery.isError}
+                          maxFinished={maxFinished}
+                          onToggleFilter={toggleRepoFilter}
+                        />
+                      )}
+                    </Fragment>
                   );
                 })}
               </tbody>
@@ -401,36 +438,6 @@ export function GroupMemberStats({
         )}
       </CardContent>
     </Card>
-  );
-}
-
-function formatRate(rate: number | null): string {
-  return rate === null ? "—" : `${Math.round(rate * 100)}%`;
-}
-
-/** Bar length = finished PRs relative to the busiest member; fill split merged/closed */
-function MergeRateBar({ stats, max }: { stats: MemberStats; max: number }) {
-  const finished = stats.merged + stats.closed;
-  const rate = mergeRate(stats);
-
-  return (
-    <div className="flex items-center gap-2">
-      <div className="h-2 w-24 overflow-hidden rounded-full bg-muted">
-        <div
-          className="flex h-full"
-          style={{ width: `${(finished / max) * 100}%` }}
-        >
-          <div
-            className="h-full bg-status-approved"
-            style={{ width: `${(rate ?? 0) * 100}%` }}
-          />
-          <div className="h-full flex-1 bg-status-changes-requested" />
-        </div>
-      </div>
-      <span className="w-9 text-xs text-muted-foreground tabular-nums">
-        {formatRate(rate)}
-      </span>
-    </div>
   );
 }
 

@@ -73,3 +73,7 @@ export function buildRepoBreakdownSearch(
   const when = since ? ` ${dateField}:>=${since}` : "";
   return `is:pr org:${org} ${who}${when}`;
 }
+
+export function githubSearchUrl(query: string): string {
+  return `https://github.com/search?type=pullrequests&q=${encodeURIComponent(query)}`;
+}

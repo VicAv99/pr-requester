@@ -4,6 +4,7 @@ import type {
   MemberRepos,
   MemberStats,
   OrgRepo,
+  RepoStats,
   StatsRange,
 } from "./types/member-stats";
 
@@ -115,5 +116,35 @@ export const dashboardQueries = {
       },
       staleTime: 15 * 60 * 1000,
       enabled: org.length > 0 && memberLogins.length > 0,
+    }),
+
+  memberRepoStats: (
+    org: string,
+    login: string,
+    range: StatsRange,
+    repos: string[],
+  ) =>
+    queryOptions({
+      queryKey: [
+        ...dashboardQueries.all(),
+        "member-repo-stats",
+        org,
+        login,
+        range,
+        [...repos].sort((a, b) => a.localeCompare(b)),
+      ],
+      queryFn: async (): Promise<RepoStats[]> => {
+        const params = new URLSearchParams({
+          org,
+          login,
+          range,
+          repos: repos.join(","),
+        });
+        const res = await fetch(`/api/github/member-repo-stats?${params}`);
+        if (!res.ok) throw new Error("Failed to fetch repo stats");
+        return res.json();
+      },
+      staleTime: 15 * 60 * 1000,
+      enabled: org.length > 0 && login.length > 0 && repos.length > 0,
     }),
 };

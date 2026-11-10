@@ -34,3 +34,8 @@ export type MemberRepos = {
   /** True when the member has more PRs than were sampled (latest 100 of each kind) */
   truncated: boolean;
 };
+
+/** One member's exact stat counts within a single repo */
+export type RepoStats = Omit<MemberStats, "login"> & {
+  repo: string;
+};
